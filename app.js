@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require('axios')
-
+const mongoose = require('mongoose');
 
 require('dotenv').config();
 
@@ -17,6 +17,51 @@ let ACCESS_TOKEN;
 app.listen(8080, () => {
     console.log("Server is running on port http://localhost:8080")
 })
+
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB Atlas');
+  })
+  .catch((err) => {
+    console.error('Failed to connect to MongoDB Atlas', err);
+  });
+
+
+const tokenSchema = new mongoose.Schema({
+    athlete_id: {type: Number, unique: true, index: true},
+    access_token: String,
+    refresh_token: String,
+    expires_in: Number,
+    expires_at: Number
+})
+
+const Tokens = mongoose.model("Tokens", tokenSchema)
+
+async function storeTokens(athlete_id, access_token, refresh_token, expires_at, expires_in) {
+    // const tokenGroup = new Tokens({
+    //     athlete_id: athlete_id,
+    //     access_token: access_token,
+    //     refresh_token: refresh_token,
+    //     expires_at: expires_at,
+    //     expires_in: expires_in
+    // });
+
+    const filter = { athlete_id: athlete_id}
+    const update = {access_token: access_token,
+                    refresh_token: refresh_token,  
+                    expires_at: expires_at,
+                    expires_in: expires_in}
+
+    try {
+        await Tokens.deleteMany({ athlete_id: { $exists: false } });
+        const savedTokens = await Tokens.findOneAndUpdate(filter, update, {
+            new: true, upsert: true
+        });
+        console.log("saved successfully", savedTokens)
+    } catch (error) {
+        console.log("error saving tokens", error)        
+    }
+}
 
 app.use(express.static('public'))
 app.use(express.json())
@@ -45,9 +90,10 @@ app.get('/exchange_token', async (req, res) => {
             code: AUTH_CODE,
             grant_type: 'authorization_code'
         })
-        ACCESS_TOKEN = response.data.access_token
-        res.send(response.data)
-        console.log(ACCESS_TOKEN)
+        const { expires_at, expires_in, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
+        // res.send(response.data)
+        storeTokens(athlete_id, access_token, refresh_token, expires_at, expires_in)
+        res.send(await Tokens.find())
     }
     catch (error) {
         console.error("Existing code doesnt work")
