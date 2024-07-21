@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require('axios')
 const mongoose = require('mongoose');
 const session = require('express-session')
+const path = require('path')
 
 require('dotenv').config();
 
@@ -10,10 +11,18 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 const app = express();
-
-
-
 let ACCESS_TOKEN;
+
+app.use(express.static('public'))
+app.use(express.json())
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true
+  }));
+
+app.use(authenticate);
 
 app.listen(8080, () => {
     console.log("Server is running on port http://localhost:8080")
@@ -56,40 +65,43 @@ async function storeTokens(athlete_id, access_token, refresh_token, expires_at, 
     }
 }
 
-app.use(express.static('public'))
-app.use(express.json())
-
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true
-  }));
-
+function authenticate(req, res, next) {
+    req.isAuthenticated = false
+    if (req.session.athlete_id) {
+        req.isAuthenticated = true        
+    }
+    next()
+}
 
 app.get("/home", (req, res)=> {
-    res.send("Hello world")
+    res.sendFile(path.join(__dirname, "public/home.html"))
 })
 
 app.get('/profile', (req, res) => {
-    if (req.session.athlete_id) {
-        res.send("welcome to your profile")
+    if (req.isAuthenticated) {
+        // res.send(`welcome to your profile, strava ${req.session.athlete_id}`)
+        res.sendFile(path.join(__dirname, "public/profile.html"))
+
     }
     else {
-        res.send("no profile in session")
+        res.status(401).send("Unauthorized")
     }
 })
 
 app.get('/auth/strava', (req, res) => {
-    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8080/auth/strava/callback&approval_prompt=force&scope=read`
+    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8080/auth/strava/callback&approval_prompt=auto&scope=read`
     res.redirect(stravaAuthUrl)
+})
+
+app.get('/auth/spotify', (req, res) => {
+    res.send("redirect to spotify sign-in page")
 })
 
 
 app.get('/auth/strava/callback', async (req, res) => {
-    const params = req.query;
-    const AUTH_CODE = params.code
-    let ACCESS_TOKEN;
-    if ('error' in params) {
+    const AUTH_CODE = req.query.code
+    let ACCESS_TOKEN
+    if ('error' in req.query) {
         res.send("Error in auth: access denied")
     }
     try {
@@ -100,7 +112,7 @@ app.get('/auth/strava/callback', async (req, res) => {
             grant_type: 'authorization_code'
         })
         const { expires_at, expires_in, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
-        // res.send(response.data)
+        // console.log(response.data)
         storeTokens(athlete_id, access_token, refresh_token, expires_at, expires_in)
         req.session.athlete_id = athlete_id;
         res.redirect('/profile')
