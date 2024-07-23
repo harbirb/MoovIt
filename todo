@@ -1,2 +1,7 @@
-manage refresh tokens for strava
-
+# 
+# Get a list of songs played by the user during their activity:
+# Steps:
+# Using the strava API, get the users most recent activity
+# From that activity, get the start time and duration of the activity
+# use the Spotify API and get the users playback history during that time
+# 
