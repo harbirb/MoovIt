@@ -1,3 +1,4 @@
 # Get songs before the activity's finish time, and compare with songs after activity start time.
 # Build static html pages, populate the fields using response data
-# encrypt connection to be https
+# manage token refreshing
+

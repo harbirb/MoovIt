@@ -17,11 +17,9 @@ const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const MONGODB_URI = process.env.MONGODB_URI
 const app = express();
 
-mongoose.connect(MONGODB_URI)
-  .then(() => {
+mongoose.connect(MONGODB_URI).then(() => {
     console.log('Connected to MongoDB Atlas');
-  })
-  .catch((err) => {
+  }).catch((err) => {
     console.error('Failed to connect to MongoDB Atlas', err);
   });
 
@@ -180,5 +178,26 @@ app.get('/auth/strava/callback', async (req, res) => {
     }
 })
 
+async function getStravaToken(req) {
+    const oldTokenInfo = req.session.stravaTokenInfo
+    if (Date.now() > oldTokenInfo.expires_at * 1000) {
+        try {
+            const response = await axios.post('https://www.strava.com/oauth/token', {
+                client_id: STRAVA_CLIENT_ID,
+                client_secret: STRAVA_CLIENT_SECRET,
+                grant_type: "refresh_token",
+                refresh_token: oldTokenInfo.refresh_token
+            })
+            const {access_token, refresh_token, expires_at} = response.data
+            // update token info with only the changed fields
+            req.session.stravaTokenInfo = {...oldTokenInfo, access_token, refresh_token, expires_at}
+            return access_token
+        } catch (error) {
+            console.log(error)
+        }        
+    } else {
+        return req.session.stravaTokenInfo.access_token
+    }
+}
 
 
