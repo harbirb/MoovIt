@@ -178,6 +178,7 @@ app.get('/auth/strava/callback', async (req, res) => {
     }
 })
 
+// returns a valid access token for strava api
 async function getStravaToken(req) {
     const oldTokenInfo = req.session.stravaTokenInfo
     if (Date.now() > oldTokenInfo.expires_at * 1000) {
@@ -196,8 +197,30 @@ async function getStravaToken(req) {
             console.log(error)
         }        
     } else {
-        return req.session.stravaTokenInfo.access_token
+        return oldTokenInfo.access_token
     }
 }
 
+// returns a valid access token for spotify api
+async function getSpotifyToken(req) {
+    const oldTokenInfo = req.session.spotifyTokenInfo
+    if (Date.now() > oldTokenInfo.expires_at * 1000) {
+        try {
+            const response = await axios.post("https://accounts.spotify.com/api/token", {
+                grant_type: "refresh_token",
+                refresh_token: oldTokenInfo.refresh_token
+            }, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            })
+            const {access_token, refresh_token, expires_in} = response.data
+            req.session.spotifyTokenInfo = {access_token, refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+        } catch (error) {
+            console.log(error)
+        }
+    } else {
+        return oldTokenInfo.access_token
+    }
+}
 
