@@ -1,24 +1,35 @@
-const express = require("express");
+const express = require("express")
 const axios = require('axios')
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 const session = require('express-session')
 const path = require('path')
-const querystring = require("querystring");
+const querystring = require("querystring")
+const MongoStore = require('connect-mongo')
 
-require('dotenv').config();
+
+require('dotenv').config()
 
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-
+const MONGODB_URI = process.env.MONGODB_URI
 const app = express();
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB Atlas');
+  })
+  .catch((err) => {
+    console.error('Failed to connect to MongoDB Atlas', err);
+  });
 
 app.use(express.static('public'))
 app.use(express.json())
 
 app.use(session({
+    store: MongoStore.create({mongoUrl: MONGODB_URI}),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true
@@ -30,42 +41,7 @@ app.listen(8080, () => {
     console.log("Server is running on port http://localhost:8080")
 })
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB Atlas');
-  })
-  .catch((err) => {
-    console.error('Failed to connect to MongoDB Atlas', err);
-  });
 
-
-const tokenSchema = new mongoose.Schema({
-    athlete_id: {type: Number, unique: true, index: true},
-    access_token: String,
-    refresh_token: String,
-    expires_in: Number,
-    expires_at: Number
-})
-
-const Tokens = mongoose.model("Tokens", tokenSchema)
-
-async function storeTokens(athlete_id, access_token, refresh_token, expires_at, expires_in) {
-    
-    const filter = { athlete_id: athlete_id}
-    const update = {access_token: access_token,
-                    refresh_token: refresh_token,  
-                    expires_at: expires_at,
-                    expires_in: expires_in}
-
-    try {
-        const savedTokens = await Tokens.findOneAndUpdate(filter, update, {
-            new: true, upsert: true
-        });
-        console.log("saved tokens successfully")
-    } catch (error) {
-        console.log("error saving tokens", error)        
-    }
-}
 
 function authenticate(req, res, next) {
     req.isAuthenticated = false
@@ -77,6 +53,13 @@ function authenticate(req, res, next) {
 
 app.get("/home", (req, res)=> {
     res.sendFile(path.join(__dirname, "public/home.html"))
+})
+
+app.get('/', (req, res) => {
+    if (req.isAuthenticated) {
+        res.send("You are signed-in")
+    }
+    else res.send("not signed in")
 })
 
 app.get('/profile', (req, res) => {
@@ -128,9 +111,9 @@ app.get('/auth/spotify/callback', async (req, res) => {
               'Authorization': 'Basic ' + (new Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'))
             }
         })
-        const { access_token, expires_in, scope, refresh_token } = response.data;
-        req.session.spotify_token = access_token
-        res.redirect('/recent_activity')
+        const { access_token, expires_in, refresh_token } = response.data;
+        req.session.spotifyTokenInfo = {access_token, refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+        res.send(req.session.spotifyTokenInfo)
     } catch {
         console.error("spotify code doesnt work")
     }
@@ -139,8 +122,8 @@ app.get('/auth/spotify/callback', async (req, res) => {
 
 app.get("/recent_activity", async (req, res) => {
     // get activities in the last week
-    const strava_token = req.session.strava_token
-    const spotify_token = req.session.spotify_token
+    const strava_token = req.session.stravaTokenInfo.access_token
+    const spotify_token = req.session.spotifyTokenInfo.access_token
     try {
         const response = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
@@ -158,22 +141,21 @@ app.get("/recent_activity", async (req, res) => {
         // res.send(`activity lasted  ${duration}`)
         const songList = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
             params: {
-                limit: 50,
+                limit: 10,
                 after: start_time
             },
             headers: {
                 Authorization: "Bearer " + spotify_token
             }
         })
-        console.log(songList.data)
         songList.data.items.forEach((obj) => {
             console.log(obj.track.name, obj.played_at)
         })
-        // console.log('listened to' + songList.data.items)
-        // res.send(songList.data.items.map(track => track.name)) 
+        res.send(songList.data.items.map(obj => {
+            return `${obj.track.name} by ${obj.track.artists.map(artist => artist.name)}`
+        }))
     } catch (error) {
         console.log(error)
-        console.log(strava_token)
     }    
 })
 
@@ -189,10 +171,8 @@ app.get('/auth/strava/callback', async (req, res) => {
             code: AUTH_CODE,
             grant_type: 'authorization_code'
         })
-        const { expires_at, expires_in, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
-        storeTokens(athlete_id, access_token, refresh_token, expires_at, expires_in)
-        req.session.athlete_id = athlete_id
-        req.session.strava_token = access_token
+        const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
+        req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
         res.redirect('/profile')
     }
     catch (error) {

@@ -1,5 +1,3 @@
 # Get songs before the activity's finish time, and compare with songs after activity start time.
 # Build static html pages, populate the fields using response data
-
-
-# Use cookies to remember user details even after restarting browser/server, to avoid user from signing-in everytime
+# encrypt connection to be https
