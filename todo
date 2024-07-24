@@ -1,7 +1,5 @@
-# 
-# Get a list of songs played by the user during their activity:
-# Steps:
-# Using the strava API, get the users most recent activity
-# From that activity, get the start time and duration of the activity
-# use the Spotify API and get the users playback history during that time
-# 
+# Get songs before the activity's finish time, and compare with songs after activity start time.
+# Build static html pages, populate the fields using response data
+
+
+# Use cookies to remember user details even after restarting browser/server, to avoid user from signing-in everytime

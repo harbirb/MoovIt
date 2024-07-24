@@ -91,14 +91,14 @@ app.get('/profile', (req, res) => {
 })
 
 app.get('/auth/strava', (req, res) => {
-    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8080/auth/strava/callback&approval_prompt=auto&scope=read`
+    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8080/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all`
     res.redirect(stravaAuthUrl)
 })
 
 // request user authorization from spotify
 app.get('/auth/spotify', (req, res) => {
     // var state = generateRandomString(16);
-    var scope = 'user-read-private user-read-email';
+    var scope = 'user-read-private user-read-email user-read-recently-played';
     var state = 'klhgKJFhjdyFBkhfJGHL' 
 
   res.redirect('https://accounts.spotify.com/authorize?' +
@@ -129,13 +129,53 @@ app.get('/auth/spotify/callback', async (req, res) => {
             }
         })
         const { access_token, expires_in, scope, refresh_token } = response.data;
-        res.send(response.data)
+        req.session.spotify_token = access_token
+        res.redirect('/recent_activity')
     } catch {
         console.error("spotify code doesnt work")
     }
 }
 )
 
+app.get("/recent_activity", async (req, res) => {
+    // get activities in the last week
+    const strava_token = req.session.strava_token
+    const spotify_token = req.session.spotify_token
+    try {
+        const response = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
+            params: {
+                before: Date.now() /1000,
+                after: (Date.now()- 7 * 24 * 60 * 60 *1000 ) / 1000
+            }, 
+            headers: {
+                'Authorization': 'Bearer ' + strava_token
+            }
+    })
+        var activity = response.data[0]
+        const start_time = new Date(activity.start_date_local).getTime()
+        const duration = activity.elapsed_time
+        console.log(start_time)
+        // res.send(`activity lasted  ${duration}`)
+        const songList = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
+            params: {
+                limit: 50,
+                after: start_time
+            },
+            headers: {
+                Authorization: "Bearer " + spotify_token
+            }
+        })
+        console.log(songList.data)
+        songList.data.items.forEach((obj) => {
+            console.log(obj.track.name, obj.played_at)
+        })
+        // console.log('listened to' + songList.data.items)
+        // res.send(songList.data.items.map(track => track.name)) 
+    } catch (error) {
+        console.log(error)
+        console.log(strava_token)
+    }    
+})
 
 app.get('/auth/strava/callback', async (req, res) => {
     const AUTH_CODE = req.query.code
@@ -151,7 +191,8 @@ app.get('/auth/strava/callback', async (req, res) => {
         })
         const { expires_at, expires_in, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
         storeTokens(athlete_id, access_token, refresh_token, expires_at, expires_in)
-        req.session.athlete_id = athlete_id;
+        req.session.athlete_id = athlete_id
+        req.session.strava_token = access_token
         res.redirect('/profile')
     }
     catch (error) {
