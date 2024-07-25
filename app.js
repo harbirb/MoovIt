@@ -120,8 +120,8 @@ app.get('/auth/spotify/callback', async (req, res) => {
 
 app.get("/recent_activity", async (req, res) => {
     // get activities in the last week
-    const strava_token = req.session.stravaTokenInfo.access_token
-    const spotify_token = req.session.spotifyTokenInfo.access_token
+    const strava_token = await getStravaToken(req)
+    const spotify_token = await getSpotifyToken(req)
     try {
         const response = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
@@ -133,11 +133,10 @@ app.get("/recent_activity", async (req, res) => {
             }
     })
         var activity = response.data[0]
-        const start_time = new Date(activity.start_date_local).getTime()
-        const duration = activity.elapsed_time
-        // console.log(start_time)
-        // res.send(`activity lasted  ${duration}`)
-        const songList = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
+        const start_time = new Date(activity.start_date).getTime()
+        console.log("activity started at " , activity.start_date)
+        let end_time = start_time + activity.elapsed_time * 1000
+        const songsAfterStart = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
             params: {
                 limit: 10,
                 after: start_time
@@ -146,11 +145,22 @@ app.get("/recent_activity", async (req, res) => {
                 Authorization: "Bearer " + spotify_token
             }
         })
-        songList.data.items.forEach((obj) => {
-            console.log(obj.track.name, obj.played_at)
+        const songsBeforeEnd = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
+            params: {
+                limit: 10,
+                before: end_time
+            },
+            headers: {
+                Authorization: "Bearer " + spotify_token
+            }
         })
-        res.send(songList.data.items.map(obj => {
-            return `${obj.track.name} by ${obj.track.artists.map(artist => artist.name)}`
+        const songSet = new Set(songsAfterStart.data.items.map(obj => obj.played_at))
+        const songsDuringActivity = songsBeforeEnd.data.items.filter(obj => songSet.has(obj.played_at))
+        songsDuringActivity.forEach((obj) => {
+            console.log("Listened to", obj.track.name, "at", obj.played_at)
+        })
+        res.send(songsDuringActivity.map(obj => {
+            return `Listened to ${obj.track.name} by ${obj.track.artists.map(artist => artist.name)}`
         }))
     } catch (error) {
         console.log(error)
@@ -209,8 +219,8 @@ async function getStravaToken(req) {
 // spotify api does not return a new refresh token, keep using same refresh token
 async function getSpotifyToken(req) {
     const oldTokenInfo = req.session.spotifyTokenInfo
-    console.log(oldTokenInfo)
-    if (Date.now() > 1000) {
+    // console.log(oldTokenInfo)
+    if (Date.now() > oldTokenInfo.expires_at * 1000) {
         try {
             const response = await axios.post("https://accounts.spotify.com/api/token", {
                 grant_type: "refresh_token",
@@ -223,7 +233,7 @@ async function getSpotifyToken(req) {
             })
             if (response.data.access_token) {
                 const {access_token, expires_in} = response.data
-                console.log(response.data)
+                // console.log(response.data)
                 req.session.spotifyTokenInfo = {access_token, refresh_token: oldTokenInfo.refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
                 return access_token
             } else {
