@@ -53,9 +53,9 @@ app.get("/home", (req, res)=> {
     res.sendFile(path.join(__dirname, "public/home.html"))
 })
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
     if (req.isAuthenticated) {
-        res.send("You are signed-in")
+        res.send(await getSpotifyToken(req))
     }
     else res.send("not signed in")
 })
@@ -135,7 +135,7 @@ app.get("/recent_activity", async (req, res) => {
         var activity = response.data[0]
         const start_time = new Date(activity.start_date_local).getTime()
         const duration = activity.elapsed_time
-        console.log(start_time)
+        // console.log(start_time)
         // res.send(`activity lasted  ${duration}`)
         const songList = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
             params: {
@@ -189,10 +189,14 @@ async function getStravaToken(req) {
                 grant_type: "refresh_token",
                 refresh_token: oldTokenInfo.refresh_token
             })
-            const {access_token, refresh_token, expires_at} = response.data
-            // update token info with only the changed fields
-            req.session.stravaTokenInfo = {...oldTokenInfo, access_token, refresh_token, expires_at}
-            return access_token
+            if (response.data.access_token) {
+                const {access_token, refresh_token, expires_at} = response.data
+                // update token info with only the changed fields
+                req.session.stravaTokenInfo = {...oldTokenInfo, access_token, refresh_token, expires_at}
+                return access_token
+            } else {
+                throw new Error("invalid response")
+            }
         } catch (error) {
             console.log(error)
         }        
@@ -202,22 +206,31 @@ async function getStravaToken(req) {
 }
 
 // returns a valid access token for spotify api
+// spotify api does not return a new refresh token, keep using same refresh token
 async function getSpotifyToken(req) {
     const oldTokenInfo = req.session.spotifyTokenInfo
-    if (Date.now() > oldTokenInfo.expires_at * 1000) {
+    console.log(oldTokenInfo)
+    if (Date.now() > 1000) {
         try {
             const response = await axios.post("https://accounts.spotify.com/api/token", {
                 grant_type: "refresh_token",
                 refresh_token: oldTokenInfo.refresh_token
             }, {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': 'Basic ' + (new Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'))
                 }
             })
-            const {access_token, refresh_token, expires_in} = response.data
-            req.session.spotifyTokenInfo = {access_token, refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+            if (response.data.access_token) {
+                const {access_token, expires_in} = response.data
+                console.log(response.data)
+                req.session.spotifyTokenInfo = {access_token, refresh_token: oldTokenInfo.refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+                return access_token
+            } else {
+                throw new Error("invalid response")
+            }
         } catch (error) {
-            console.log(error)
+            console.log(error.response.data)
         }
     } else {
         return oldTokenInfo.access_token
