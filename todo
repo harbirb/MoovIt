@@ -1,4 +1,4 @@
-# Get songs before the activity's finish time, and compare with songs after activity start time.
+# Get songs played for activities within the past week.
 # Build static html pages, populate the fields using response data
-# manage token refreshing
+
 

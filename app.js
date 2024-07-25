@@ -53,9 +53,32 @@ app.get("/home", (req, res)=> {
     res.sendFile(path.join(__dirname, "public/home.html"))
 })
 
+app.get("/current", async (req, res) => {
+    const spotify_token = await getSpotifyToken(req)
+    const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
+        headers: {
+            Authorization: "Bearer " + spotify_token
+        }
+    })
+    console.log(currentSong.data.item.name)
+})
+
 app.get('/', async (req, res) => {
     if (req.isAuthenticated) {
-        res.send(await getSpotifyToken(req))
+        const spotify_token = await getSpotifyToken(req)
+        const songList = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
+            params: {
+                limit: 40,
+                after: Date.now() - (1 * 60 * 60 * 1000)
+            },
+            headers: {
+                Authorization: "Bearer " + spotify_token
+            }
+        })
+        console.log("------------------------")
+        songList.data.items.forEach(obj => {
+            console.log(obj.track.name, obj.played_at)
+        })
     }
     else res.send("not signed in")
 })
@@ -79,7 +102,7 @@ app.get('/auth/strava', (req, res) => {
 // request user authorization from spotify
 app.get('/auth/spotify', (req, res) => {
     // var state = generateRandomString(16);
-    var scope = 'user-read-private user-read-email user-read-recently-played';
+    var scope = 'user-read-private user-read-email user-read-recently-played user-read-currently-playing';
     var state = 'klhgKJFhjdyFBkhfJGHL' 
 
   res.redirect('https://accounts.spotify.com/authorize?' +
@@ -118,50 +141,53 @@ app.get('/auth/spotify/callback', async (req, res) => {
 }
 )
 
+// DATA SAVER MUST BE TURNED OFF IN APP SETTINGS
+// IN PHONE SETTINGS, ALLOW BACKGROUND DATA USAGE FOR SPOTIFY
 app.get("/recent_activity", async (req, res) => {
     // get activities in the last week
     const strava_token = await getStravaToken(req)
     const spotify_token = await getSpotifyToken(req)
     try {
-        const response = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
+        const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
                 before: Date.now() /1000,
-                after: (Date.now()- 7 * 24 * 60 * 60 *1000 ) / 1000
+                after: (Date.now()- 14 * 24 * 60 * 60 *1000 ) / 1000
             }, 
             headers: {
                 'Authorization': 'Bearer ' + strava_token
             }
     })
-        var activity = response.data[0]
-        const start_time = new Date(activity.start_date).getTime()
-        console.log("activity started at " , activity.start_date)
-        let end_time = start_time + activity.elapsed_time * 1000
-        const songsAfterStart = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
-            params: {
-                limit: 10,
-                after: start_time
-            },
-            headers: {
-                Authorization: "Bearer " + spotify_token
-            }
+        const activityPromises = recentActivities.data.map(async (activity) => {
+            const {name, distance, start_date, elapsed_time} = activity
+            const start_time = new Date(start_date).getTime()
+            let end_time = start_time + elapsed_time * 1000
+            const songsAfterStart = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
+                params: {
+                    limit: 10,
+                    after: start_time
+                },
+                headers: {
+                    Authorization: "Bearer " + spotify_token
+                }
+            })
+            const songsBeforeEnd = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
+                params: {
+                    limit: 10,
+                    before: end_time
+                },
+                headers: {
+                    Authorization: "Bearer " + spotify_token
+                }
+            })
+            const songSet = new Set(songsAfterStart.data.items.map(obj => obj.played_at))
+            const songsDuringActivity = songsBeforeEnd.data.items.filter(obj => songSet.has(obj.played_at))
+            let playList = songsDuringActivity.map(obj => {
+                return `${obj.track.name} by ${obj.track.artists.map(artist => artist.name)}`
+            })
+            return {name, distance, start_date, playList}
         })
-        const songsBeforeEnd = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
-            params: {
-                limit: 10,
-                before: end_time
-            },
-            headers: {
-                Authorization: "Bearer " + spotify_token
-            }
-        })
-        const songSet = new Set(songsAfterStart.data.items.map(obj => obj.played_at))
-        const songsDuringActivity = songsBeforeEnd.data.items.filter(obj => songSet.has(obj.played_at))
-        songsDuringActivity.forEach((obj) => {
-            console.log("Listened to", obj.track.name, "at", obj.played_at)
-        })
-        res.send(songsDuringActivity.map(obj => {
-            return `Listened to ${obj.track.name} by ${obj.track.artists.map(artist => artist.name)}`
-        }))
+        let activityPlaylistArray = await Promise.all(activityPromises)
+        res.send(activityPlaylistArray)
     } catch (error) {
         console.log(error)
     }    
