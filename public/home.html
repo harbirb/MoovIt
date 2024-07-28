@@ -3,10 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Welcome</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
 </head>
 <body>
-    <h1>Welcome to my app</h1>
-    <a href="/auth/strava"><button>Click here to get started</button></a>
+    <h1>Mooov</h1>
+    <h2>A playlist for all your workouts</h2>
+    <a href="/auth/strava" id="loginStravaButton" style="display: block">
+        <button>Connect with Strava</button>
+    </a>
+    <a href="/auth/spotify" id="loginSpotifyButton" style="display: block">
+        <button>Connect with Spotify</button>
+    </a>
+    <script src="client.js"></script>
 </body>
 </html>
+

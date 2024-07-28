@@ -33,24 +33,26 @@ app.use(session({
     saveUninitialized: true
   }));
 
-app.use(authenticate);
-
 app.listen(8080, () => {
     console.log("Server is running on port http://localhost:8080")
 })
 
-
-
 function authenticate(req, res, next) {
-    req.isAuthenticated = false
-    if (req.session.athlete_id) {
-        req.isAuthenticated = true        
+    if (req.session.stravaTokenInfo.athlete_id || req.path == "/") {
+        next();
     }
-    next()
+    res.status(401).json({ message: 'Unauthorized' });
 }
 
-app.get("/home", (req, res)=> {
+app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, "public/home.html"))
+})
+
+app.get('/authStatus', (req, res) => {
+    res.send({
+        spotify: req.session.spotifyLinked,
+        strava: req.session.stravaLinked
+    })
 })
 
 app.get("/current", async (req, res) => {
@@ -63,25 +65,6 @@ app.get("/current", async (req, res) => {
     console.log(currentSong.data.item.name)
 })
 
-app.get('/', async (req, res) => {
-    if (req.isAuthenticated) {
-        const spotify_token = await getSpotifyToken(req)
-        const songList = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
-            params: {
-                limit: 40,
-                after: Date.now() - (1 * 60 * 60 * 1000)
-            },
-            headers: {
-                Authorization: "Bearer " + spotify_token
-            }
-        })
-        console.log("------------------------")
-        songList.data.items.forEach(obj => {
-            console.log(obj.track.name, obj.played_at)
-        })
-    }
-    else res.send("not signed in")
-})
 
 app.get('/profile', (req, res) => {
     if (req.isAuthenticated) {
@@ -134,7 +117,9 @@ app.get('/auth/spotify/callback', async (req, res) => {
         })
         const { access_token, expires_in, refresh_token } = response.data;
         req.session.spotifyTokenInfo = {access_token, refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
-        res.send(req.session.spotifyTokenInfo)
+        req.session.spotifyLinked = true
+        console.log("spotify linked")
+        res.redirect('/')
     } catch {
         console.error("spotify code doesnt work")
     }
@@ -163,7 +148,7 @@ app.get("/recent_activity", async (req, res) => {
             let end_time = start_time + elapsed_time * 1000
             const songsAfterStart = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
                 params: {
-                    limit: 10,
+                    limit: 50,
                     after: start_time
                 },
                 headers: {
@@ -172,7 +157,7 @@ app.get("/recent_activity", async (req, res) => {
             })
             const songsBeforeEnd = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
                 params: {
-                    limit: 10,
+                    limit: 50,
                     before: end_time
                 },
                 headers: {
@@ -182,7 +167,7 @@ app.get("/recent_activity", async (req, res) => {
             const songSet = new Set(songsAfterStart.data.items.map(obj => obj.played_at))
             const songsDuringActivity = songsBeforeEnd.data.items.filter(obj => songSet.has(obj.played_at))
             let playList = songsDuringActivity.map(obj => {
-                return `${obj.track.name} by ${obj.track.artists.map(artist => artist.name)}`
+                return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
             })
             return {name, distance, start_date, playList}
         })
@@ -207,7 +192,9 @@ app.get('/auth/strava/callback', async (req, res) => {
         })
         const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
         req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
-        res.redirect('/profile')
+        req.session.stravaLinked = true
+        console.log("strava linked")
+        res.redirect('/')
     }
     catch (error) {
         console.error("strava code doesnt work")
