@@ -3,8 +3,7 @@ Build static html pages, populate the fields using response data
 - display songs as playable items
 - display the strava activity map (draw the polyline)
 
-List more than 50 songs per activity
-
+Find playlists based on playback time instead of scanning over songs since activity start
 
 Give user the option to list their songs into their strava activity description
 -learn how to use webhooks to subscribe to new activity uplaods
@@ -12,4 +11,6 @@ Give user the option to list their songs into their strava activity description
 
 Add the option of creating a spotify playlist from an activity's song list
 
+
+BONUS: create option to overlay stats over a photo of users choice
  -->

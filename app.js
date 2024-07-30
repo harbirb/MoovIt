@@ -37,6 +37,7 @@ app.listen(8080, () => {
     console.log("Server is running on port http://localhost:8080")
 })
 
+// not used
 function authenticate(req, res, next) {
     if (req.session.stravaTokenInfo.athlete_id || req.path == "/") {
         next();
@@ -266,3 +267,26 @@ async function getSpotifyToken(req) {
     }
 }
 
+// Event data is sent here
+app.post('/webhook', (req, res) => {
+    console.log("webhook event received!", req.query, req.body)
+    const {object_type, object_id, aspect_type, owner_id, subscription_id, event_time, updates} = req.body
+    res.status(200).send('EVENT_RECEIVED')
+})
+
+// Validates the callback address
+app.get('/webhook', (req, res) => {
+    console.log("subscription validation request received", req.query)
+    const challenge = req.query['hub.challenge']
+    const verify_token = req.query['hub.verify_token']
+    console.log(verify_token)
+    res.status(200).send(challenge)
+})
+
+
+// POST https://www.strava.com/api/v3/push_subscriptions \
+//       -F client_id=130385 \
+//       -F client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea \
+//       -F callback_url=http://localhost:8080/webhook \
+//       -F verify_token=STRAVA
+// http POST https://www.strava.com/api/v3/push_subscriptions client_id=130385 client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea callback_url=https://d81a-24-85-246-116.ngrok-free.app/webhook verify_token=STRAVA
