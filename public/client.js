@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const loginSpotifyButton = document.getElementById('loginSpotifyButton');
     const loginStravaButton = document.getElementById('loginStravaButton');
-    console.log("hellOOOOOO OWLRD")
+    const showSongsButton = document.getElementById('showSongsButton');
+    // console.log("hellOOOOOO OWLRD")
 
     await checkAuthStatus();
     
@@ -10,14 +11,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch('/authStatus')
             const authStatus = await response.json()
             if (authStatus.strava) {
-                loginStravaButton.style.display = 'none'
+                loginStravaButton.disabled = true
+                loginStravaButton.textContent = "Connected to Strava"
             }
             if (authStatus.spotify) {
-                loginSpotifyButton.style.display = 'none'
+                loginSpotifyButton.disabled = true
+                loginSpotifyButton.textContent = "Connected to Spotify"
+            }
+            if (authStatus.strava && authStatus.spotify) {
+                showSongsButton.style.display = 'block'
             }
             console.log(authStatus)
         } catch (error) {
             console.error("error in checking auth status", error)
         }
     }
+})
+
+document.getElementById("loginSpotifyButton").addEventListener('click', () => {
+    window.location.href='/auth/spotify'
+})
+
+document.getElementById("loginStravaButton").addEventListener('click', () => {
+    window.location.href='/auth/strava'
 })

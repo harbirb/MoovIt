@@ -48,6 +48,10 @@ app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, "public/home.html"))
 })
 
+app.get('/recentlyPlayed', async (req, res) => {
+    res.sendFile(path.join(__dirname, "public/showSongs.html"))
+})
+
 app.get('/authStatus', (req, res) => {
     res.send({
         spotify: req.session.spotifyLinked,
@@ -55,6 +59,7 @@ app.get('/authStatus', (req, res) => {
     })
 })
 
+// not used
 app.get("/current", async (req, res) => {
     const spotify_token = await getSpotifyToken(req)
     const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
@@ -80,6 +85,29 @@ app.get('/profile', (req, res) => {
 app.get('/auth/strava', (req, res) => {
     const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8080/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all`
     res.redirect(stravaAuthUrl)
+})
+
+app.get('/auth/strava/callback', async (req, res) => {
+    const AUTH_CODE = req.query.code
+    if ('error' in req.query) {
+        res.send("Error in auth: access denied")
+    }
+    try {
+        const response = await axios.post("https://www.strava.com/oauth/token", {
+            client_id: STRAVA_CLIENT_ID,
+            client_secret: STRAVA_CLIENT_SECRET,
+            code: AUTH_CODE,
+            grant_type: 'authorization_code'
+        })
+        const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
+        req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
+        req.session.stravaLinked = true
+        console.log("strava linked")
+        res.redirect('/')
+    }
+    catch (error) {
+        console.error("strava code doesnt work")
+    }
 })
 
 // request user authorization from spotify
@@ -178,28 +206,6 @@ app.get("/recent_activity", async (req, res) => {
     }    
 })
 
-app.get('/auth/strava/callback', async (req, res) => {
-    const AUTH_CODE = req.query.code
-    if ('error' in req.query) {
-        res.send("Error in auth: access denied")
-    }
-    try {
-        const response = await axios.post("https://www.strava.com/oauth/token", {
-            client_id: STRAVA_CLIENT_ID,
-            client_secret: STRAVA_CLIENT_SECRET,
-            code: AUTH_CODE,
-            grant_type: 'authorization_code'
-        })
-        const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
-        req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
-        req.session.stravaLinked = true
-        console.log("strava linked")
-        res.redirect('/')
-    }
-    catch (error) {
-        console.error("strava code doesnt work")
-    }
-})
 
 // returns a valid access token for strava api
 async function getStravaToken(req) {
