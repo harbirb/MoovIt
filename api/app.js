@@ -23,7 +23,7 @@ mongoose.connect(MONGODB_URI).then(() => {
     console.error('Failed to connect to MongoDB Atlas', err);
   });
 
-app.use(express.static('static-files'))
+app.use(express.static('public'))
 app.use(express.json())
 
 app.use(session({
@@ -49,11 +49,11 @@ function authenticate(req, res, next) {
 }
 
 app.get('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, "static-files/home.html"))
+    res.sendFile(path.join(__dirname, "public/home.html"))
 })
 
 app.get('/recentlyPlayed', async (req, res) => {
-    res.sendFile(path.join(__dirname, "static-files/showSongs.html"))
+    res.sendFile(path.join(__dirname, "public/showSongs.html"))
 })
 
 app.get('/authStatus', (req, res) => {
@@ -78,7 +78,7 @@ app.get("/current", async (req, res) => {
 app.get('/profile', (req, res) => {
     if (req.isAuthenticated) {
         // res.send(`welcome to your profile, strava ${req.session.athlete_id}`)
-        res.sendFile(path.join(__dirname, "static-files/profile.html"))
+        res.sendFile(path.join(__dirname, "public/profile.html"))
 
     }
     else {

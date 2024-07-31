@@ -2,8 +2,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginSpotifyButton = document.getElementById('loginSpotifyButton');
     const loginStravaButton = document.getElementById('loginStravaButton');
     const showSongsButton = document.getElementById('showSongsButton');
-    // console.log("hellOOOOOO OWLRD")
-
     await checkAuthStatus();
     
     async function checkAuthStatus() {
