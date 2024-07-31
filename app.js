@@ -33,9 +33,9 @@ app.use(session({
     saveUninitialized: true
   }));
 
-// app.listen(8080, () => {
-//     console.log("Server is running on port http://localhost:8080")
-// })
+app.listen(8080, () => {
+    console.log("Server is running on port http://localhost:8080")
+})
 
 module.exports = app;
 
