@@ -4,6 +4,16 @@
       {
         "src": "app.js",
         "use": "@vercel/node"
+      },
+      {
+        "src": "static-files/",
+        "use": "@vercel/static"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "app.js"
       }
     ]
   }
