@@ -280,6 +280,8 @@ app.post('/webhook', (req, res) => {
 
 // Validates the callback address
 app.get('/webhook', (req, res) => {
+    console.log(req)
+    console.log(req.keys())
     console.log("subscription validation request received", req.query)
     const challenge = req.query['hub.challenge']
     const verify_token = req.query['hub.verify_token']
@@ -291,6 +293,7 @@ app.get('/webhook', (req, res) => {
 // POST https://www.strava.com/api/v3/push_subscriptions \
 //       -F client_id=130385 \
 //       -F client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea \
-//       -F callback_url=http://localhost:8080/webhook \
+//       -F callback_url=https://strava-app-elid.onrender.com/webhook \
 //       -F verify_token=STRAVA
-// http POST https://www.strava.com/api/v3/push_subscriptions client_id=130385 client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea callback_url=https://d81a-24-85-246-116.ngrok-free.app/webhook verify_token=STRAVA
+// http POST https://www.strava.com/api/v3/push_subscriptions client_id=130385 client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea callback_url=https://strava-app-elid.onrender.com/webhook verify_token=STRAVA
+// http GET https://www.strava.com/api/v3/push_subscriptions client_id=130385 client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea
