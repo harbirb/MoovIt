@@ -33,8 +33,8 @@ app.use(session({
     saveUninitialized: true
   }));
 
-app.listen(3000, () => {
-    console.log("Server is running on port http://localhost:3000")
+app.listen(process.env.PORT, () => {
+    console.log(`Server is running on port ${process.env.PORT}`)
 })
 
 module.exports = app;
