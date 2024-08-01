@@ -280,13 +280,14 @@ app.post('/webhook', (req, res) => {
 
 // Validates the callback address
 app.get('/webhook', (req, res) => {
-    console.log(req)
-    console.log(req.keys())
     console.log("subscription validation request received", req.query)
     const challenge = req.query['hub.challenge']
     const verify_token = req.query['hub.verify_token']
-    console.log(verify_token)
-    res.status(200).send(challenge)
+    if (verify_token == "STRAVA") {
+        res.status(200).send({"hub.challenge": challenge})
+    }
+    else res.status(403)    
+    console.log(challenge)
 })
 
 
