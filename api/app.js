@@ -23,7 +23,7 @@ mongoose.connect(MONGODB_URI).then(() => {
     console.error('Failed to connect to MongoDB Atlas', err);
   });
 
-app.use(express.static('public'))
+app.use(express.static('../public'))
 app.use(express.json())
 
 app.use(session({
@@ -33,8 +33,8 @@ app.use(session({
     saveUninitialized: true
   }));
 
-app.listen(8080, () => {
-    console.log("Server is running on port http://localhost:8080")
+app.listen(3000, () => {
+    console.log("Server is running on port http://localhost:3000")
 })
 
 module.exports = app;
@@ -49,11 +49,11 @@ function authenticate(req, res, next) {
 }
 
 app.get('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, "public/home.html"))
+    res.sendFile(path.resolve(__dirname, "../public/home.html"))
 })
 
 app.get('/recentlyPlayed', async (req, res) => {
-    res.sendFile(path.join(__dirname, "public/showSongs.html"))
+    res.sendFile(path.resolve(__dirname, "public/showSongs.html"))
 })
 
 app.get('/authStatus', (req, res) => {
@@ -78,7 +78,7 @@ app.get("/current", async (req, res) => {
 app.get('/profile', (req, res) => {
     if (req.isAuthenticated) {
         // res.send(`welcome to your profile, strava ${req.session.athlete_id}`)
-        res.sendFile(path.join(__dirname, "public/profile.html"))
+        res.sendFile(path.resolve(__dirname, "public/profile.html"))
 
     }
     else {
