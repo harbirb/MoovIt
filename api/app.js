@@ -15,6 +15,7 @@ const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const MONGODB_URI = process.env.MONGODB_URI
+const BASE_URL = process.env.BASE_URL
 const app = express();
 
 mongoose.connect(MONGODB_URI).then(() => {
@@ -87,7 +88,7 @@ app.get('/profile', (req, res) => {
 })
 
 app.get('/auth/strava', (req, res) => {
-    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8080/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all`
+    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all`
     res.redirect(stravaAuthUrl)
 })
 
@@ -126,7 +127,7 @@ app.get('/auth/spotify', (req, res) => {
       client_id: SPOTIFY_CLIENT_ID,
       scope: scope,
       state: state,
-      redirect_uri: 'http://localhost:8080/auth/spotify/callback'
+      redirect_uri: `${BASE_URL}/auth/spotify/callback`
     }));
     
 })
@@ -139,7 +140,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
     try {
         const response = await axios.post('https://accounts.spotify.com/api/token', {
             code: AUTH_CODE,
-            redirect_uri: 'http://localhost:8080/auth/spotify/callback',
+            redirect_uri: `${BASE_URL}/auth/spotify/callback`,
             grant_type: 'authorization_code'
         }, {
             headers: {
