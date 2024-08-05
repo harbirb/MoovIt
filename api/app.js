@@ -127,7 +127,7 @@ app.get('/auth/strava/callback', async (req, res) => {
         res.redirect('/')
     }
     catch (error) {
-        console.error("strava code doesnt work")
+        console.error("strava code doesnt work", (error))
     }
 })
 
