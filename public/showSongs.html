@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
 </head>
 <body>
-    <h1>:0</h1>
+    <h1>Here are your recent songs</h1>
+    <p id="songs"></p>
+    <script src="../public/test.js">
+        testfn();
+        const songParagraph = document.getElementById("songs")
+        try {
+            const response = await fetch("/recent_activity")
+            songParagraph.textContent = response
+        } catch (err) {
+            console.log("error in fetching recent activity", err)
+        }
+    </script>
 </body>
 </html>

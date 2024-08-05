@@ -54,7 +54,7 @@ app.get('/', async (req, res) => {
 })
 
 app.get('/recentlyPlayed', async (req, res) => {
-    res.sendFile(path.resolve(__dirname, "public/showSongs.html"))
+    res.sendFile(path.resolve(__dirname, "../public/showSongs.html"))
 })
 
 app.get('/authStatus', (req, res) => {
@@ -273,9 +273,13 @@ async function getSpotifyToken(req) {
 
 // Event data is sent here
 app.post('/webhook', (req, res) => {
-    console.log("webhook event received!", req.query, req.body)
+    console.log("webhook event received!", req.body)
     const {object_type, object_id, aspect_type, owner_id, subscription_id, event_time, updates} = req.body
     res.status(200).send('EVENT_RECEIVED')
+    // if (object_type == 'athlete' && aspect_type == 'create') {
+    //     // call a function to post songs to the users activity description
+    //     postSongsToActivity
+    // }
 })
 
 // Validates the callback address
