@@ -24,7 +24,7 @@ mongoose.connect(MONGODB_URI).then(() => {
     console.error('Failed to connect to MongoDB Atlas', err);
   });
 
-app.use(express.static('../public'))
+app.use(express.static(path.join(__dirname, '../public')))
 app.use(express.json())
 
 app.use(session({
@@ -50,7 +50,7 @@ function authenticate(req, res, next) {
 }
 
 app.get('/', async (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../public/home.html"))
+    res.sendFile(path.join(__dirname, "../public/home.html"))
 })
 
 app.get('/recentlyPlayed', async (req, res) => {
