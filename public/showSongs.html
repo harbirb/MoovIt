@@ -10,7 +10,9 @@
     <h1>Here are your recent songs</h1>
     <p id="songs"></p>
     <script src="test.js">
-        testfn();
+        testfn()
+        console.log(three())
+        console.log("SCRIPT IS WORKING")
         const songParagraph = document.getElementById("songs")
         try {
             const response = await fetch("/recent_activity")
