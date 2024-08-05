@@ -6,7 +6,10 @@ Build static html pages, populate the fields using response data
 Find playlists based on playback time instead of scanning over songs since activity start
 
 Give user the option to list their songs into their strava activity description
--learn how to use webhooks to subscribe to new activity uplaods
+- create toggle on/off button on page
+- link that button's state to a session variable 
+- upon receiving a webhook event noti, look at the athlete_id and use it to find the user's preferences
+- if the user selected YES, then add songs to their activity
 
 
 Add the option of creating a spotify playlist from an activity's song list
