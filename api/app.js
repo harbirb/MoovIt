@@ -40,6 +40,14 @@ app.listen(process.env.PORT, () => {
 
 module.exports = app;
 
+const userPreferencesSchema = new mongoose.Schema({
+    athlete_id: mongoose.ObjectId,
+    isSubscribed: {
+        type: Boolean,
+        required: true
+    }
+})
+const UserPreferences = mongoose.model("UserPreferences", userPreferencesSchema)
 
 // not used
 function authenticate(req, res, next) {
@@ -88,7 +96,7 @@ app.get('/profile', (req, res) => {
 })
 
 app.get('/auth/strava', (req, res) => {
-    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all`
+    const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all,write`
     res.redirect(stravaAuthUrl)
 })
 
@@ -107,7 +115,15 @@ app.get('/auth/strava/callback', async (req, res) => {
         const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
         req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
         req.session.stravaLinked = true
-        console.log("strava linked")
+        const existingPreferences = await UserPreferences.findOne({athlete_id: athlete_id})
+        if (!existingPreferences) {
+            const newPreferences = new UserPreferences({
+                athlete_id: athlete_id,
+                isSubscribed: false
+            })
+            await newPreferences.save()
+            console.log('New user preferences created, user is not subscribed')
+        }
         res.redirect('/')
     }
     catch (error) {
@@ -276,11 +292,17 @@ app.post('/webhook', (req, res) => {
     console.log("webhook event received!", req.body)
     const {object_type, object_id, aspect_type, owner_id, subscription_id, event_time, updates} = req.body
     res.status(200).send('EVENT_RECEIVED')
-    // if (object_type == 'athlete' && aspect_type == 'create') {
-    //     // call a function to post songs to the users activity description
-    //     postSongsToActivity
-    // }
+    if (isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
+        // call a function to post songs to the users activity description
+        // postSongsToActivity()
+    }
 })
+
+// returns true if the athlete is subscribed (songs automatically posted to their activity)
+async function isAthleteSubscribed(athlete_id) {
+    const existingPreferences = await UserPreferences.findOne({athlete_id: athlete_id})
+    return existingPreferences.isSubscribed
+}
 
 // Validates the callback address
 app.get('/webhook', (req, res) => {
