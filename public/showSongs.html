@@ -8,10 +8,13 @@
 </head>
 <body>
     <h1>Here are your recent songs</h1>
-    <p id="songs"></p>
+    <p id="songs">songs go here</p>
     <script src="test.js">
-        testfn()
-        console.log(three())
+        console.log("SCRIPT IS WORKING")
+        document.addEventListener('DOMContentLoaded', () => {
+            testfn();
+            console.log(three())
+        })        
         console.log("SCRIPT IS WORKING")
         const songParagraph = document.getElementById("songs")
         try {

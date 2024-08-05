@@ -13,7 +13,9 @@
     <button id="loginSpotifyButton">Connect with Spotify</button>
     <a href="/recentlyPlayed"  style="display:none" id="showSongsButton"><button>Click here to get started</button></a>
     <script>
+        console.log("printed before DOM loaded")
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log("printed after DOM loaded")
             const loginSpotifyButton = document.getElementById('loginSpotifyButton');
             const loginStravaButton = document.getElementById('loginStravaButton');
             const showSongsButton = document.getElementById('showSongsButton');
