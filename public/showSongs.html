@@ -12,13 +12,19 @@
     <script src="test.js"></script>
     <script>    
         console.log("SCRIPT IS WORKING")
-        const songParagraph = document.getElementById("songs")
-        try {
-            const response = fetch("/recent_activity")
-            songParagraph.textContent = response
-        } catch (err) {
-            console.log("error in fetching recent activity", err)
-        }
+        document.addEventListener('DOMContentLoaded', async () => {
+            const songParagraph = document.getElementById("songs")
+            try {
+                const response = await fetch("/recent_activity")
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`)
+                }
+                const data = await response.json()
+                songParagraph.textContent = JSON.stringify(data)           
+            } catch (err) {
+                console.log("Error in fetching recent activity:", err)
+            }
+        })
     </script>
 </body>
 </html>
