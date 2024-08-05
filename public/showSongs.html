@@ -9,7 +9,13 @@
 <body>
     <h1>Here are your recent songs</h1>
     <p id="songs">songs go here</p>
+    <table id="songTable">
+        <tbody>
+            <!-- Activities and their songs go here -->
+        </tbody>
+    </table>
     <script src="test.js"></script>
+    <script src="songTable.js"></script>
     <script>    
         console.log("SCRIPT IS WORKING")
         document.addEventListener('DOMContentLoaded', async () => {
@@ -20,7 +26,7 @@
                     throw new Error(`HTTP error! Status: ${response.status}`)
                 }
                 const data = await response.json()
-                songParagraph.textContent = JSON.stringify(data)           
+                populateTable(data)
             } catch (err) {
                 console.log("Error in fetching recent activity:", err)
             }
