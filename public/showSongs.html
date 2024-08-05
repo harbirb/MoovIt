@@ -9,16 +9,12 @@
 <body>
     <h1>Here are your recent songs</h1>
     <p id="songs">songs go here</p>
-    <script src="test.js">
-        console.log("SCRIPT IS WORKING")
-        document.addEventListener('DOMContentLoaded', () => {
-            testfn();
-            console.log(three())
-        })        
+    <script src="test.js"></script>
+    <script>    
         console.log("SCRIPT IS WORKING")
         const songParagraph = document.getElementById("songs")
         try {
-            const response = await fetch("/recent_activity")
+            const response = fetch("/recent_activity")
             songParagraph.textContent = response
         } catch (err) {
             console.log("error in fetching recent activity", err)
