@@ -25,7 +25,7 @@
         console.log("SCRIPT IS WORKING")
         document.addEventListener('DOMContentLoaded', async () => {
             const songParagraph = document.getElementById("songs")
-            try {
+            <!-- try {
                 const response = await fetch("/recent_activity")
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`)
@@ -34,7 +34,7 @@
                 populateTable(data)
             } catch (err) {
                 console.log("Error in fetching recent activity:", err)
-            }
+            } -->
         })
     </script>
 </body>

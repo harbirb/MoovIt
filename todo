@@ -1,6 +1,14 @@
 <!-- 
 
-check that the new token functions work and getSongsByActivity 
+test the new token functions and getSongsByActivity 
+
+create endpoint for updating the user's isSubscribed status
+connect button on page to user's isSubscribed status
+
+
+
+
+--------------------------------------------------------------------------
 
 Build static html pages, populate the fields using response data
 - display songs as playable items
