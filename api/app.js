@@ -408,6 +408,8 @@ async function getSongsByActivity(athlete_id, activity_id) {
             }
         })
         const songsBeforeEnd = await songsBeforeEndResponse.json()
+        console.log(songsBeforeEnd)
+        console.log(songsBeforeEnd.items)
         const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
         const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
         let activityPlaylist = songsDuringActivity.map(obj => {
