@@ -351,7 +351,7 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('EVENT_RECEIVED')
     if (isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
         // call a function to post songs to the users activity description
-        postSongsToActivity(owner_id, object_id)
+        postToActivity(owner_id, object_id)
     }
 })
 
@@ -361,19 +361,20 @@ async function isAthleteSubscribed(athlete_id) {
     return user.isSubscribed
 }
 
-async function postSongsToActivity(athlete_id, activity_id) {
-    // TODO
-    const user = User.findOne({athlete_id: athlete_id})
+
+
+async function postToActivity(athlete_id, activity_id) {
     try {
-        const url = `https://www.strava.com/api/v3/activities/${activity_id}`
-        const response = await fetch(url, {
+        stravaAccessToken = await getStravaToken(athlete_id)
+        let activityDescription = "🐮💯👋"
+        const response = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}`, {
             method: "PUT",
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + user.stravaAccessToken
+                'Authorization': 'Bearer ' + stravaAccessToken
             },
             body: JSON.stringify({
-                description: "🐮💯👋"
+                description: activityDescription
             })
         })
         if (!response.ok) {
@@ -386,8 +387,42 @@ async function postSongsToActivity(athlete_id, activity_id) {
     }
 }
 
-function getSongsByActivity(athlete_id, activity_id) {
-    // TODO
+async function getSongsByActivity(athlete_id, activity_id) {
+    try {
+        stravaAccessToken = await getStravaToken(athlete_id)
+        spotifyAccessToken = await getSpotifyToken(athlete_id)
+        const activity = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}?include_all_efforts=false`, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + stravaAccessToken
+            }
+        })
+        const {start_date, elapsed_time} = await activity.json()
+        const start_time = new Date(start_date).getTime()
+        const end_time = start_time + elapsed_time * 1000
+        const songsAfterStartResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&after=${start_time}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + spotifyAccessToken
+            }
+        })
+        const songsAfterStart = await songsAfterStartResponse.json()
+        const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + spotifyAccessToken
+            }
+        })
+        const songsBeforeEnd = await songsBeforeEndResponse.json()
+        const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
+        const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
+        let activityPlaylist = songsDuringActivity.map(obj => {
+            return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
+        })
+        return activityPlaylist
+    } catch (error) {
+        console.log("Error", error)
+    }
 }
 
 // Validates the callback address
