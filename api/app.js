@@ -334,7 +334,7 @@ async function getSpotifyToken(athlete_id) {
             console.log(error.response.data)
         }
     } else {
-        return oldTokenInfo.access_token
+        return user.spotifyAccessToken
     }
 }
 
