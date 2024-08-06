@@ -32,7 +32,7 @@ toggleButton.addEventListener('change', async () => {
         statusText.textContent = 'Off';
     }
     try {
-        await fetch('user/toggleIsSubscribed', {
+        await fetch('/user/toggleIsSubscribed', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

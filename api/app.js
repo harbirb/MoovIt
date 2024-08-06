@@ -260,7 +260,7 @@ app.get("/recent_activity", async (req, res) => {
 app.get("/user/isSubscribed", async (req, res) => {
     try {
         const isSubscribed = await isAthleteSubscribed(req.session.athlete_id)
-        res.send(isSubscribed)
+        res.status(200).send(isSubscribed)
     } catch (error) {
         console.log("error checking subscription status", error)
         res.status(500).send("internal server error")
@@ -270,11 +270,14 @@ app.get("/user/isSubscribed", async (req, res) => {
 app.post("/user/toggleIsSubscribed", async (req, res) => {
     try {
         const {newSubcriptionStatus} = req.body
-        const result = await User.updateOne({athlete_id: req.session.athlete_id},
+        const result = await User.updateOne(
+            {athlete_id: req.session.athlete_id},
             {$set: {
                     isSubscribed: newSubcriptionStatus
                 }
-            })
+            }
+        )
+        console.log(result)
         if (result.nModified === 0) {
             return res.status(404).json({ message: 'User not found or no change in subscription status' })
         }
