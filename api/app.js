@@ -195,7 +195,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
                 {$set: {
                     spotifyAccessToken: access_token,
                     spotifyRefreshToken: refresh_token,
-                    expires_at: expires_at}
+                    spotifyTokenExpiresAt: expires_at}
                 },
                 {new: true, runValidators: true}
             )
@@ -351,7 +351,7 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('EVENT_RECEIVED')
     if (isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
         // call a function to post songs to the users activity description
-        postSongsToActivity()
+        postSongsToActivity(owner_id, object_id)
     }
 })
 
@@ -361,8 +361,33 @@ async function isAthleteSubscribed(athlete_id) {
     return user.isSubscribed
 }
 
-function postSongsToActivity(activity_id, athlete_id) {
-    // rewrite token handling to use database instead of session store
+async function postSongsToActivity(athlete_id, activity_id) {
+    // TODO
+    const user = User.findOne({athlete_id: athlete_id})
+    try {
+        const url = `https://www.strava.com/api/v3/activities/${activity_id}`
+        const response = await fetch(url, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + user.stravaAccessToken
+            },
+            body: JSON.stringify({
+                description: "🐮💯👋"
+            })
+        })
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        const result = await response.json()
+        console.log('Success:', result)
+    } catch (error) {
+        console.log("error", error)
+    }
+}
+
+function getSongsByActivity(athlete_id, activity_id) {
+    // TODO
 }
 
 // Validates the callback address
