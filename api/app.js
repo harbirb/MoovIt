@@ -270,7 +270,7 @@ app.get("/user/isSubscribed", async (req, res) => {
 app.post("/user/toggleIsSubscribed", async (req, res) => {
     try {
         const {newSubscriptionStatus} = req.body
-        console.log("new status is", newSubcriptionStatus)
+        console.log("new status is", newSubscriptionStatus)
         const result = await User.updateOne(
             {athlete_id: req.session.athlete_id},
             {$set: {
