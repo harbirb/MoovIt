@@ -41,7 +41,11 @@ app.listen(process.env.PORT, () => {
 module.exports = app;
 
 const userPreferencesSchema = new mongoose.Schema({
-    athlete_id: mongoose.ObjectId,
+    athlete_id: {
+        type: Number,
+        required: true,
+        unique: true
+    },
     isSubscribed: {
         type: Boolean,
         required: true
@@ -124,6 +128,7 @@ app.get('/auth/strava/callback', async (req, res) => {
             await newPreferences.save()
             console.log('New user preferences created, user is not subscribed')
         }
+        console.log(`User already exists in system. isSubcribed is ${existingPreferences.isSubscribed}`)
         res.redirect('/')
     }
     catch (error) {
