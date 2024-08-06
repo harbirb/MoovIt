@@ -40,7 +40,7 @@ app.listen(process.env.PORT, () => {
 
 module.exports = app;
 
-const userPreferencesSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     athlete_id: {
         type: Number,
         required: true,
@@ -49,9 +49,15 @@ const userPreferencesSchema = new mongoose.Schema({
     isSubscribed: {
         type: Boolean,
         required: true
-    }
+    },
+    stravaAccessToken: String,
+    stravaRefreshToken: String,
+    stravaTokenExpiresAt: Date,
+    spotifyAccessToken: String,
+    spotifyRefreshToken: String,
+    spotifyTokenExpiresAt: Date
 })
-const UserPreferences = mongoose.model("UserPreferences", userPreferencesSchema)
+const User = mongoose.model("User", userSchema)
 
 // not used
 function authenticate(req, res, next) {
@@ -117,22 +123,32 @@ app.get('/auth/strava/callback', async (req, res) => {
             grant_type: 'authorization_code'
         })
         const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
+        // TODO: delete line below
         req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
-        req.session.stravaLinked = true
-        const existingPreferences = await UserPreferences.findOne({athlete_id: athlete_id})
-        if (!existingPreferences) {
-            const newPreferences = new UserPreferences({
-                athlete_id: athlete_id,
-                isSubscribed: false
-            })
-            await newPreferences.save()
-            console.log('New user preferences created, user is not subscribed')
+        req.session.athlete_id = athlete_id
+        try {
+            const user = await User.findOneAndUpdate(
+                {athlete_id: athlete_id},
+                {$set: {
+                    isSubscribed: false,
+                    stravaAccessToken: access_token,
+                    stravaRefreshToken: refresh_token,
+                    stravaTokenExpiresAt: expires_at
+                }},
+                {new: true,
+                    upsert: true,
+                    runValidators: true
+                }
+            )
+            console.log("user upserted successfully", user)
+        } catch {
+            console.log("error upserting user")
         }
-        console.log(`User already exists in system. isSubcribed is ${existingPreferences.isSubscribed}`)
+        req.session.stravaLinked = true
         res.redirect('/')
     }
     catch (error) {
-        console.error("strava code doesnt work", (error))
+        console.error("Error in strava auth step", (error))
     }
 })
 
@@ -170,12 +186,27 @@ app.get('/auth/spotify/callback', async (req, res) => {
             }
         })
         const { access_token, expires_in, refresh_token } = response.data;
+        const expires_at = Math.floor(Date.now()/1000) + expires_in
+        // TODO: delete below line after fixing token handler
         req.session.spotifyTokenInfo = {access_token, refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+        try {
+            const user = await User.findOneAndUpdate(
+                {athlete_id: req.session.athlete_id},
+                {$set: {
+                    spotifyAccessToken: access_token,
+                    spotifyRefreshToken: refresh_token,
+                    expires_at: expires_at}
+                },
+                {new: true, runValidators: true}
+            )
+            console.log("Linked spotify to this user", user)
+        } catch (error) {
+            console.log("error updating user", error)
+        }
         req.session.spotifyLinked = true
-        console.log("spotify linked")
         res.redirect('/')
-    } catch {
-        console.error("spotify code doesnt work")
+    } catch (error) {
+        console.error("Error in Spotify Auth Step", error)
     }
 }
 )
@@ -184,8 +215,8 @@ app.get('/auth/spotify/callback', async (req, res) => {
 // IN PHONE SETTINGS, ALLOW BACKGROUND DATA USAGE FOR SPOTIFY
 app.get("/recent_activity", async (req, res) => {
     // get activities in the last week
-    const strava_token = await getStravaToken(req)
-    const spotify_token = await getSpotifyToken(req)
+    const strava_token = await getStravaToken(req.session.athlete_id)
+    const spotify_token = await getSpotifyToken(req.session.athlete_id)
     try {
         const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
@@ -234,20 +265,31 @@ app.get("/recent_activity", async (req, res) => {
 
 
 // returns a valid access token for strava api
-async function getStravaToken(req) {
-    const oldTokenInfo = req.session.stravaTokenInfo
-    if (Date.now() > oldTokenInfo.expires_at * 1000) {
+async function getStravaToken(athlete_id) {
+    const user = await User.findOne({athlete_id: athlete_id})
+    if (Date.now() > user.stravaTokenExpiresAt * 1000) {
         try {
             const response = await axios.post('https://www.strava.com/oauth/token', {
                 client_id: STRAVA_CLIENT_ID,
                 client_secret: STRAVA_CLIENT_SECRET,
                 grant_type: "refresh_token",
-                refresh_token: oldTokenInfo.refresh_token
+                refresh_token: user.stravaRefreshToken
             })
             if (response.data.access_token) {
                 const {access_token, refresh_token, expires_at} = response.data
-                // update token info with only the changed fields
-                req.session.stravaTokenInfo = {...oldTokenInfo, access_token, refresh_token, expires_at}
+                try {
+                    await User.updateOne(
+                        {athlete_id: athlete_id},
+                        {$set: {
+                            stravaAccessToken: access_token,
+                            stravaRefreshToken: refresh_token,
+                            stravaTokenExpiresAt: expires_at
+                        }}
+                    )
+                    console.log("updated strava token data")
+                } catch (error) {
+                    console.log("error updating user's strava token data", error)
+                }
                 return access_token
             } else {
                 throw new Error("invalid response")
@@ -256,20 +298,19 @@ async function getStravaToken(req) {
             console.log(error)
         }        
     } else {
-        return oldTokenInfo.access_token
+        return user.stravaAccessToken
     }
 }
 
 // returns a valid access token for spotify api
 // spotify api does not return a new refresh token, keep using same refresh token
-async function getSpotifyToken(req) {
-    const oldTokenInfo = req.session.spotifyTokenInfo
-    // console.log(oldTokenInfo)
-    if (Date.now() > oldTokenInfo.expires_at * 1000) {
+async function getSpotifyToken(athlete_id) {
+    const user = await findOne({athlete_id: athlete_id})
+    if (Date.now() > user.spotifyTokenExpiresAt * 1000) {
         try {
             const response = await axios.post("https://accounts.spotify.com/api/token", {
                 grant_type: "refresh_token",
-                refresh_token: oldTokenInfo.refresh_token
+                refresh_token: user.spotifyRefreshToken
             }, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -278,8 +319,19 @@ async function getSpotifyToken(req) {
             })
             if (response.data.access_token) {
                 const {access_token, expires_in} = response.data
-                // console.log(response.data)
-                req.session.spotifyTokenInfo = {access_token, refresh_token: oldTokenInfo.refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+                const expires_at = Math.floor(Date.now()/1000) + expires_in
+                try {
+                    await User.updateOne(
+                        {athlete_id: athlete_id},
+                        {$set: {
+                            spotifyAccessToken: access_token,
+                            spotifyTokenExpiresAt: expires_at
+                        }}
+                    )
+                    console.log("updated spotify token data")
+                } catch (error) {
+                    console.log("error updating user's spotify token data", error)
+                }
                 return access_token
             } else {
                 throw new Error("invalid response")
@@ -299,14 +351,18 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('EVENT_RECEIVED')
     if (isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
         // call a function to post songs to the users activity description
-        // postSongsToActivity()
+        postSongsToActivity()
     }
 })
 
 // returns true if the athlete is subscribed (songs automatically posted to their activity)
 async function isAthleteSubscribed(athlete_id) {
-    const existingPreferences = await UserPreferences.findOne({athlete_id: athlete_id})
-    return existingPreferences.isSubscribed
+    const user = await User.findOne({athlete_id: athlete_id})
+    return user.isSubscribed
+}
+
+function postSongsToActivity(activity_id, athlete_id) {
+    // rewrite token handling to use database instead of session store
 }
 
 // Validates the callback address
