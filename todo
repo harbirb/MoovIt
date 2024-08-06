@@ -1,4 +1,7 @@
 <!-- 
+
+check that the new token functions work and getSongsByActivity 
+
 Build static html pages, populate the fields using response data
 - display songs as playable items
 - display the strava activity map 

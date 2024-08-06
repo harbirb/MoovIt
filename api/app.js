@@ -94,15 +94,9 @@ app.get("/current", async (req, res) => {
 })
 
 
-app.get('/profile', (req, res) => {
-    if (req.isAuthenticated) {
-        // res.send(`welcome to your profile, strava ${req.session.athlete_id}`)
-        res.sendFile(path.resolve(__dirname, "public/profile.html"))
-
-    }
-    else {
-        res.status(401).send("Unauthorized")
-    }
+app.get('/testpage', async (req, res) => {
+    const playList = await getSongsByActivity(req.session.athlete_id, 12063845051)
+    res.send(playList)
 })
 
 app.get('/auth/strava', (req, res) => {
@@ -347,7 +341,7 @@ async function getSpotifyToken(athlete_id) {
 // Event data is sent here
 app.post('/webhook', (req, res) => {
     console.log("webhook event received!", req.body)
-    const {object_type, object_id, aspect_type, owner_id, subscription_id, event_time, updates} = req.body
+    const {object_type, object_id, aspect_type, owner_id} = req.body
     res.status(200).send('EVENT_RECEIVED')
     if (isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
         // call a function to post songs to the users activity description
