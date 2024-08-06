@@ -258,7 +258,13 @@ app.get("/recent_activity", async (req, res) => {
 })
 
 app.get("/user/isSubscribed", async (req, res) => {
-    return await isAthleteSubscribed(req.session.athlete_id)
+    try {
+        const isSubscribed = await isAthleteSubscribed(req.session.athlete_id)
+        res.send(isSubscribed)
+    } catch (error) {
+        console.log("error checking subscription status", error)
+        res.status(500).send("internal server error")
+    }
 })
 
 app.post("/user/toggleIsSubscribed", async (req, res) => {
