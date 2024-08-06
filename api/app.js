@@ -269,18 +269,15 @@ app.get("/user/isSubscribed", async (req, res) => {
 
 app.post("/user/toggleIsSubscribed", async (req, res) => {
     try {
-        const {newSubcriptionStatus} = req.body
+        const {newSubscriptionStatus} = req.body
         console.log("new status is", newSubcriptionStatus)
         const result = await User.updateOne(
             {athlete_id: req.session.athlete_id},
             {$set: {
-                    isSubscribed: newSubcriptionStatus
+                    isSubscribed: newSubscriptionStatus
                 }
-            }, {
-                runValidators: true
             }
         )
-        console.log(result)
         if (result.nModified === 0) {
             return res.status(404).json({ message: 'User not found or no change in subscription status' })
         }
