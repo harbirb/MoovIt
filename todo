@@ -1,10 +1,11 @@
 <!-- 
 
-test the new token functions and getSongsByActivity 
 
 create endpoint for updating the user's isSubscribed status
 connect button on page to user's isSubscribed status
 
+on page load, use get endpoint to check isSubscribed
+in Event listener, send post request to toggle the isSubscribed preferences
 
 
 

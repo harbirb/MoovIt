@@ -257,6 +257,26 @@ app.get("/recent_activity", async (req, res) => {
     }    
 })
 
+app.get("/user/isSubscribed", async (req, res) => {
+    return await isAthleteSubscribed(req.session.athlete_id)
+})
+
+app.post("/user/toggleIsSubscribed", async (req, res) => {
+    try {
+        const {newSubcriptionStatus} = req.body
+        const result = await User.updateOne({athlete_id: req.session.athlete_id},
+            {$set: {
+                    isSubscribed: newSubcriptionStatus
+                }
+            })
+        if (result.nModified === 0) {
+            return res.status(404).json({ message: 'User not found or no change in subscription status' })
+        }
+        res.status(200).send({ message: "updated subscription successfully" })
+    } catch (error) {
+        console.log("Error in updating user's subscription", error)
+    }
+})
 
 // returns a valid access token for strava api
 async function getStravaToken(athlete_id) {

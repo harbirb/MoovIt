@@ -25,10 +25,33 @@ const toggleButton = document.getElementById('toggleButton');
 const statusText = document.getElementById('status');
 
 // Update the status text based on the toggle state
-toggleButton.addEventListener('change', () => {
+toggleButton.addEventListener('change', async () => {
     if (toggleButton.checked) {
-        statusText.textContent = 'On';
+        statusText.textContent = 'On'
     } else {
         statusText.textContent = 'Off';
     }
+    try {
+        await fetch('user/toggleIsSubscribed', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({newSubscriptionStatus: toggleButton.checked})
+        })
+    } catch (error) {
+        console.log(error)
+    }
 });
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch('/user/isSubscribed')
+        const isSubscribed = await response.json()
+        toggleButton.checked = isSubscribed
+    } catch (error) {
+        console.error('Error fetching user preferences:', error)
+    }
+
+
+})
