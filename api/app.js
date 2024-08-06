@@ -262,6 +262,7 @@ app.get("/recent_activity", async (req, res) => {
 async function getStravaToken(athlete_id) {
     const user = await User.findOne({athlete_id: athlete_id})
     if (Date.now() > user.stravaTokenExpiresAt * 1000) {
+        console.log("strava token expired, getting new one")
         try {
             const response = await axios.post('https://www.strava.com/oauth/token', {
                 client_id: STRAVA_CLIENT_ID,
@@ -301,6 +302,7 @@ async function getStravaToken(athlete_id) {
 async function getSpotifyToken(athlete_id) {
     const user = await User.findOne({athlete_id: athlete_id})
     if (Date.now() > user.spotifyTokenExpiresAt * 1000) {
+        console.log("spotify token expired, getting new one")
         try {
             const response = await axios.post("https://accounts.spotify.com/api/token", {
                 grant_type: "refresh_token",
@@ -328,10 +330,10 @@ async function getSpotifyToken(athlete_id) {
                 }
                 return access_token
             } else {
-                throw new Error("invalid response")
+                console.log("could not get new access_token")
             }
         } catch (error) {
-            console.log(error.response.data)
+            console.log("error in getting spotify token", error.response.data)
         }
     } else {
         return user.spotifyAccessToken
