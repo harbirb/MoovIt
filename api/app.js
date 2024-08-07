@@ -331,7 +331,8 @@ async function getStravaToken(athlete_id) {
 // spotify api does not return a new refresh token, keep using same refresh token
 async function getSpotifyToken(athlete_id) {
     const user = await User.findOne({athlete_id: athlete_id})
-    if (Date.now() > user.spotifyTokenExpiresAt * 1000) {
+    // add * 1000 to line below once its fixed
+    if (Date.now() > user.spotifyTokenExpiresAt) {
         console.log("spotify token expired, getting new one")
         try {
             const response = await axios.post("https://accounts.spotify.com/api/token", {
