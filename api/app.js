@@ -116,8 +116,8 @@ app.get("/current-song", async (req, res) => {
     //     'Content-Type': 'application/json'
     //   }
     // })
-    const currentSong = await currentSongResponse.json()
-    res.send(currentSong)
+    // const currentSong = await currentSongResponse.json()
+    res.send(currentSong.data)
 })
 
 app.get('/testpage', async (req, res) => {
