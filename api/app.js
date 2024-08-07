@@ -91,8 +91,10 @@ app.get("/current", async (req, res) => {
             'Authorization': 'Bearer ' + spotifyAccessToken
         }
     })
+    
+    console.log("Spotify Request STATUS:", songsBeforeEndResponse.status, songsBeforeEndResponse.statusText)
     const songsBeforeEnd = await songsBeforeEndResponse.json()
-    const songsDuringActivity = songsBeforeEnd.items.filter(obj => songSet.has(obj.played_at))
+    const songsDuringActivity = songsBeforeEnd.items
     let activityPlaylist = songsDuringActivity.map(obj => {
         return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
     })
