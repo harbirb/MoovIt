@@ -95,8 +95,8 @@ app.get("/current", async (req, res) => {
 
 
 app.get('/testpage', async (req, res) => {
-    const playList = await getSongsByActivity(req.session.athlete_id, 12063845051)
-    res.send(playList)
+    const playlist = await getSongsByActivity(req.session.athlete_id, 12063845051)
+    res.send(playlist)
 })
 
 app.get('/auth/strava', (req, res) => {
