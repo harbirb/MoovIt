@@ -209,48 +209,25 @@ app.get('/auth/spotify/callback', async (req, res) => {
 
 // DATA SAVER MUST BE TURNED OFF IN APP SETTINGS
 // IN PHONE SETTINGS, ALLOW BACKGROUND DATA USAGE FOR SPOTIFY
-app.get("/recent_activity", async (req, res) => {
+app.get("/recent-activities", async (req, res) => {
     // get activities in the last week
-    const strava_token = await getStravaToken(req.session.athlete_id)
-    const spotify_token = await getSpotifyToken(req.session.athlete_id)
+    const athlete_id = req.session.athlete_id
+    const strava_token = await getStravaToken(athlete_id)
     try {
         const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
                 before: Date.now() /1000,
-                after: (Date.now()- 14 * 24 * 60 * 60 *1000 ) / 1000
+                after: (Date.now()- 7 * 24 * 60 * 60 *1000 ) / 1000
             }, 
             headers: {
                 'Authorization': 'Bearer ' + strava_token
             }
     })
         const activityPromises = recentActivities.data.map(async (activity) => {
-            const {name, distance, start_date, elapsed_time} = activity
-            const start_time = new Date(start_date).getTime()
-            let end_time = start_time + elapsed_time * 1000
-            const songsAfterStart = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
-                params: {
-                    limit: 50,
-                    after: start_time
-                },
-                headers: {
-                    Authorization: "Bearer " + spotify_token
-                }
-            })
-            const songsBeforeEnd = await axios.get("https://api.spotify.com/v1/me/player/recently-played", {
-                params: {
-                    limit: 50,
-                    before: end_time
-                },
-                headers: {
-                    Authorization: "Bearer " + spotify_token
-                }
-            })
-            const songSet = new Set(songsAfterStart.data.items.map(obj => obj.played_at))
-            const songsDuringActivity = songsBeforeEnd.data.items.filter(obj => songSet.has(obj.played_at))
-            let playList = songsDuringActivity.map(obj => {
-                return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
-            })
-            return {name, distance, start_date, playList}
+            const {name, distance, start_date, id: activity_id} = activity
+            // get the playlist associated with each activity
+            const playlist = await getSongsByActivity(req.session.athlete_id, activity_id)
+            return {name, distance, start_date, playlist}
         })
         let activityPlaylistArray = await Promise.all(activityPromises)
         res.send(activityPlaylistArray)

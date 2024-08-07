@@ -53,5 +53,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error fetching user preferences:', error)
     }
 
-
+    try {
+        const response = await fetch('/recent-activities')
+        const activityPlaylistArray = await response.json()
+        populateTable(activityPlaylistArray)
+    } catch (error) {
+        console.log('Error in fetching recent activities', error)
+    }
 })
+
