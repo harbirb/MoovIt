@@ -95,7 +95,9 @@ app.get("/current", async (req, res) => {
 
 
 app.get('/testpage', async (req, res) => {
+    // should get my songs from my run last weekend
     const playlist = await getSongsByActivity(req.session.athlete_id, 12063845051)
+    playlist = 
     res.send(playlist)
 })
 
@@ -420,11 +422,13 @@ async function getSongsByActivity(athlete_id, activity_id) {
             }
         })
         const songsBeforeEnd = await songsBeforeEndResponse.json()
+        console.log(songsBeforeEnd)
         const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
         const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
         let activityPlaylist = songsDuringActivity.map(obj => {
             return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
         })
+        console.log(activityPlaylist)
         return activityPlaylist.reverse()
     } catch (error) {
         console.log("Error", error)
