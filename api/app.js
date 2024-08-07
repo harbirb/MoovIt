@@ -85,13 +85,13 @@ app.get('/authStatus', (req, res) => {
 // not used
 app.get("/current", async (req, res) => {
     spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
-    const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=1723047674000`, {
+    const end_time = 1722976214000
+    const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + spotifyAccessToken
         }
-    })
-    
+    })    
     console.log("Spotify Request STATUS:", songsBeforeEndResponse.status, songsBeforeEndResponse.statusText)
     console.log(songsBeforeEndResponse)
     const songsBeforeEnd = await songsBeforeEndResponse.json()
