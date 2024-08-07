@@ -104,13 +104,18 @@ app.get("/current", async (req, res) => {
 
 app.get("/current-song", async (req, res) => {
     spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
-    const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${spotifyAccessToken}`,
-        'Content-Type': 'application/json'
-      }
+    const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
+        headers: {
+            Authorization: "Bearer " + spotifyAccessToken
+        }
     })
+    // const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+    //   method: 'GET',
+    //   headers: {
+    //     'Authorization': `Bearer ${spotifyAccessToken}`,
+    //     'Content-Type': 'application/json'
+    //   }
+    // })
     const currentSong = await currentSongResponse.json()
     res.send(currentSong)
 })
