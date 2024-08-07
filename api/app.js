@@ -95,11 +95,6 @@ app.get("/current", async (req, res) => {
     console.log(songsBeforeEndResponse)
     const songsBeforeEnd = await songsBeforeEndResponse.json()
     console.log(songsBeforeEnd)
-    // const songsDuringActivity = songsBeforeEnd.items
-    // let activityPlaylist = songsDuringActivity.map(obj => {
-    //     return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
-    // })
-    // console.log(activityPlaylist)
 })
 
 app.get("/current-song", async (req, res) => {
@@ -295,7 +290,8 @@ app.post("/user/toggleIsSubscribed", async (req, res) => {
 
 // returns a valid access token for strava api
 async function getStravaToken(athlete_id) {
-    const user = await User.findOne({athlete_id: athlete_id})
+    console.log("getting token for athlete :", athlete_id)
+    const user = await User.findOne({athlete_id: athlete_id})    
     if (Date.now() > user.stravaTokenExpiresAt * 1000) {
         console.log("strava token expired, getting new one")
         try {
@@ -336,8 +332,7 @@ async function getStravaToken(athlete_id) {
 // spotify api does not return a new refresh token, keep using same refresh token
 async function getSpotifyToken(athlete_id) {
     const user = await User.findOne({athlete_id: athlete_id})
-    // add * 1000 to line below once its fixed
-    if (Date.now() > user.spotifyTokenExpiresAt) {
+    if (Date.now() > user.spotifyTokenExpiresAt * 1000) {
         console.log("spotify token expired, getting new one")
         try {
             const response = await axios.post("https://accounts.spotify.com/api/token", {
@@ -400,7 +395,7 @@ async function postToActivity(athlete_id, activity_id) {
     try {
         const songArray = await getSongsByActivity(activity_id)
         const songString = songArray.join('\n')
-        stravaAccessToken = await getStravaToken(athlete_id)
+        const stravaAccessToken = await getStravaToken(athlete_id)
         let activityDescription = songString + '\n' + "- MoovIt 🐮"
         const response = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}`, {
             method: "PUT",
@@ -449,13 +444,11 @@ async function getSongsByActivity(athlete_id, activity_id) {
             }
         })
         const songsBeforeEnd = await songsBeforeEndResponse.json()
-        console.log(songsBeforeEnd)
         const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
         const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
         let activityPlaylist = songsDuringActivity.map(obj => {
             return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
         })
-        console.log(activityPlaylist)
         return activityPlaylist.reverse()
     } catch (error) {
         console.log("Error", error)
