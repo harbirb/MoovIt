@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/user/isSubscribed')
         toggleButton.checked = await response.json()
+        statusText.textContent = toggleButton.checked ? 'On' : 'Off'
     } catch (error) {
         console.error('Error fetching user preferences:', error)
     }
