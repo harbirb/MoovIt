@@ -93,6 +93,7 @@ app.get("/current", async (req, res) => {
     })
     
     console.log("Spotify Request STATUS:", songsBeforeEndResponse.status, songsBeforeEndResponse.statusText)
+    console.log(songsBeforeEndResponse)
     const songsBeforeEnd = await songsBeforeEndResponse.json()
     const songsDuringActivity = songsBeforeEnd.items
     let activityPlaylist = songsDuringActivity.map(obj => {
