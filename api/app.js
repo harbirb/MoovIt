@@ -85,7 +85,7 @@ app.get('/authStatus', (req, res) => {
 // not used
 app.get("/current", async (req, res) => {
     spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
-    const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${Date.now()}`, {
+    const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=1723047674000`, {
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + spotifyAccessToken
@@ -346,6 +346,7 @@ async function getSpotifyToken(athlete_id) {
                 } catch (error) {
                     console.log("error updating user's spotify token data", error)
                 }
+                console.log("Returned new access token!")
                 return access_token
             } else {
                 console.log("could not get new access_token")
