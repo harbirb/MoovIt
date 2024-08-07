@@ -102,7 +102,7 @@ app.get("/current", async (req, res) => {
     // console.log(activityPlaylist)
 })
 
-app.get("current-song", async (req, res) => {
+app.get("/current-song", async (req, res) => {
     spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
     const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
       method: 'GET',
