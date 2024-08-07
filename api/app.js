@@ -393,7 +393,7 @@ async function isAthleteSubscribed(athlete_id) {
 
 async function postToActivity(athlete_id, activity_id) {
     try {
-        const songArray = await getSongsByActivity(activity_id)
+        const songArray = await getSongsByActivity(athlete_id, activity_id)
         const songString = songArray.join('\n')
         const stravaAccessToken = await getStravaToken(athlete_id)
         let activityDescription = songString + '\n' + "- MoovIt 🐮"
