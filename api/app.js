@@ -217,7 +217,7 @@ app.get("/recent-activities", async (req, res) => {
         const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
                 before: Date.now() /1000,
-                after: (Date.now()- 7 * 24 * 60 * 60 *1000 ) / 1000
+                after: (Date.now()- 14 * 24 * 60 * 60 *1000 ) / 1000
             }, 
             headers: {
                 'Authorization': 'Bearer ' + strava_token
@@ -420,14 +420,12 @@ async function getSongsByActivity(athlete_id, activity_id) {
             }
         })
         const songsBeforeEnd = await songsBeforeEndResponse.json()
-        console.log(songsBeforeEnd)
-        console.log(songsBeforeEnd.items)
         const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
         const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
         let activityPlaylist = songsDuringActivity.map(obj => {
             return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
         })
-        return activityPlaylist
+        return activityPlaylist.reverse()
     } catch (error) {
         console.log("Error", error)
     }
