@@ -91,18 +91,29 @@ app.get("/current", async (req, res) => {
         headers: {
             'Authorization': 'Bearer ' + spotifyAccessToken
         }
-    })    
-    console.log("Spotify Request STATUS:", songsBeforeEndResponse.status, songsBeforeEndResponse.statusText)
+    })
     console.log(songsBeforeEndResponse)
     const songsBeforeEnd = await songsBeforeEndResponse.json()
     console.log(songsBeforeEnd)
-    const songsDuringActivity = songsBeforeEnd.items
-    let activityPlaylist = songsDuringActivity.map(obj => {
-        return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
-    })
-    console.log(activityPlaylist)
+    // const songsDuringActivity = songsBeforeEnd.items
+    // let activityPlaylist = songsDuringActivity.map(obj => {
+    //     return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
+    // })
+    // console.log(activityPlaylist)
 })
 
+app.get("current-song", async (req, res) => {
+    spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
+    const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${spotifyAccessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    const currentSong = await currentSongResponse.json()
+    res.send(currentSong)
+})
 
 app.get('/testpage', async (req, res) => {
     // should get my songs from my run last weekend
