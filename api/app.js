@@ -84,20 +84,25 @@ app.get('/authStatus', (req, res) => {
 
 // not used
 app.get("/current", async (req, res) => {
-    const spotify_token = await getSpotifyToken(req)
-    const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
+    getSpotifyToken(req.session.athlete_id)
+    const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${Date.now()}`, {
+        method: 'GET',
         headers: {
-            Authorization: "Bearer " + spotify_token
+            'Authorization': 'Bearer ' + spotifyAccessToken
         }
     })
-    console.log(currentSong.data.item.name)
+    const songsBeforeEnd = await songsBeforeEndResponse.json()
+    const songsDuringActivity = songsBeforeEnd.items.filter(obj => songSet.has(obj.played_at))
+    let activityPlaylist = songsDuringActivity.map(obj => {
+        return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
+    })
+    console.log(activityPlaylist)
 })
 
 
 app.get('/testpage', async (req, res) => {
     // should get my songs from my run last weekend
     const playlist = await getSongsByActivity(req.session.athlete_id, 12063845051)
-    playlist = 
     res.send(playlist)
 })
 
