@@ -117,26 +117,28 @@ app.get('/auth/strava/callback', async (req, res) => {
             grant_type: 'authorization_code'
         })
         const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
-        // TODO: delete line below
-        req.session.stravaTokenInfo = {access_token, refresh_token, expires_at, athlete_id}
         req.session.athlete_id = athlete_id
         try {
-            const user = await User.findOneAndUpdate(
-                {athlete_id: athlete_id},
-                {$set: {
+            const user = await User.findOne({athlete_id: athlete_id})
+            if (user == null) {
+                const newUser = new User({
+                    athlete_id: athlete_id,
                     isSubscribed: false,
                     stravaAccessToken: access_token,
                     stravaRefreshToken: refresh_token,
                     stravaTokenExpiresAt: expires_at
-                }},
-                {new: true,
-                    upsert: true,
-                    runValidators: true
-                }
-            )
-            console.log("user upserted successfully", user)
+                })
+                await newUser.save()
+                console.log("created a new user")
+            } else {
+                user.stravaAccessToken = access_token
+                user.stravaRefreshToken = refresh_token
+                user.stravaTokenExpiresAt = expires_at
+                await user.save()
+                console.log("updated existing user")
+            }
         } catch {
-            console.log("error upserting user")
+            console.log("error updating user")
         }
         req.session.stravaLinked = true
         res.redirect('/')

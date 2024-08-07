@@ -7,15 +7,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
 </head>
 <body>
-    <h1>Mooov</h1>
+    <h1>MoovIt</h1>
     <h2>A playlist for all your workouts</h2>
-    <button id="loginStravaButton">Connect with Strava</button>
+    <button id="loginStravaButton">Click here to connect with Strava</button>
     <button id="loginSpotifyButton">Connect with Spotify</button>
     <a href="/recentlyPlayed"  style="display:none" id="showSongsButton"><button>Click here to get started</button></a>
     <script>
-        console.log("printed before DOM loaded")
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log("printed after DOM loaded")
             const loginSpotifyButton = document.getElementById('loginSpotifyButton');
             const loginStravaButton = document.getElementById('loginStravaButton');
             const showSongsButton = document.getElementById('showSongsButton');
@@ -28,6 +26,9 @@
                     if (authStatus.strava) {
                         loginStravaButton.disabled = true
                         loginStravaButton.textContent = "Connected to Strava"
+                    }
+                    if (authStatus.strava == false) {
+                        loginSpotifyButton.disabled = true
                     }
                     if (authStatus.spotify) {
                         loginSpotifyButton.disabled = true
