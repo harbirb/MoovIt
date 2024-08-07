@@ -99,20 +99,20 @@ app.get("/current", async (req, res) => {
 
 app.get("/current-song", async (req, res) => {
     spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
-    const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
-        headers: {
-            Authorization: "Bearer " + spotifyAccessToken
-        }
-    })
-    // const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-    //   method: 'GET',
-    //   headers: {
-    //     'Authorization': `Bearer ${spotifyAccessToken}`,
-    //     'Content-Type': 'application/json'
-    //   }
+    // const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
+    //     headers: {
+    //         Authorization: "Bearer " + spotifyAccessToken
+    //     }
     // })
-    // const currentSong = await currentSongResponse.json()
-    res.send(currentSong.data)
+    const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer sadfpoasdfasfjasopidfjaasfa`,
+        'Content-Type': 'application/json'
+      }
+    })
+    const currentSong = await currentSongResponse.json()
+    res.send(currentSong)
 })
 
 app.get('/testpage', async (req, res) => {
@@ -410,8 +410,6 @@ async function postToActivity(athlete_id, activity_id) {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`)
         }
-        const result = await response.json()
-        console.log('Success:', result)
     } catch (error) {
         console.log("error", error)
     }
