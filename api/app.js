@@ -460,12 +460,3 @@ app.get('/webhook', (req, res) => {
     else res.status(403)    
     console.log(challenge)
 })
-
-
-// POST https://www.strava.com/api/v3/push_subscriptions \
-//       -F client_id=130385 \
-//       -F client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea \
-//       -F callback_url=https://strava-app-elid.onrender.com/webhook \
-//       -F verify_token=STRAVA
-// http POST https://www.strava.com/api/v3/push_subscriptions client_id=130385 client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea callback_url=https://strava-app-elid.onrender.com/webhook verify_token=STRAVA
-// http GET https://www.strava.com/api/v3/push_subscriptions client_id=130385 client_secret=66d8b2e39cdc5e7be642de362690ec6ea9950eea
