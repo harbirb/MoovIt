@@ -83,8 +83,8 @@ app.get('/authStatus', (req, res) => {
 })
 
 // not used
-app.get("/current", async (req, res) => {
-    spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
+app.get("/last50", async (req, res) => {
+    const spotifyAccessToken = await getSpotifyToken(req.session.athlete_id)
     console.log(spotifyAccessToken)
     const end_time = 1722976214000
     const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
@@ -99,16 +99,11 @@ app.get("/current", async (req, res) => {
 })
 
 app.get("/current-song", async (req, res) => {
-    spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
-    // const currentSong = await axios.get("https://api.spotify.com/v1/me/player/currently-playing", {
-    //     headers: {
-    //         Authorization: "Bearer " + spotifyAccessToken
-    //     }
-    // })
+    const spotifyAccessToken = await getSpotifyToken(req.session.athlete_id)
     const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer sadfpoasdfasfjasopidfjaasfa`,
+        'Authorization': `Bearer ${spotifyAccessToken}`,
         'Content-Type': 'application/json'
       }
     })
