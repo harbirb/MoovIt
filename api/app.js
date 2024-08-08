@@ -234,15 +234,18 @@ app.get("/recent-activities", async (req, res) => {
         const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
                 before: Date.now() /1000,
-                after: (Date.now()- 4 * 24 * 60 * 60 *1000 ) / 1000
+                after: (Date.now()- 7 * 24 * 60 * 60 *1000 ) / 1000
             }, 
             headers: {
                 'Authorization': 'Bearer ' + strava_token
             }
-    })
-        const activityPromises = recentActivities.data.map(async (activity) => {
-            const {name, distance, start_date, id: activity_id} = activity
-            // get the playlist associated with each activity
+        })
+        // only show 5 recent activities
+        const recentActivitiesList = recentActivities.data.slice(0, 5)        
+        
+        // get the playlist associated with each activity
+        const activityPromises = recentActivitiesList.map(async (activity) => {
+            const {name, distance, start_date, id: activity_id} = activity            
             const playlist = await getSongsByActivity(req.session.athlete_id, activity_id)
             return {name, distance, start_date, playlist}
         })
