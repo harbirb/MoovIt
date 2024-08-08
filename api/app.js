@@ -85,6 +85,7 @@ app.get('/authStatus', (req, res) => {
 // not used
 app.get("/current", async (req, res) => {
     spotifyAccessToken = getSpotifyToken(req.session.athlete_id)
+    console.log(spotifyAccessToken)
     const end_time = 1722976214000
     const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
         method: 'GET',
@@ -115,9 +116,8 @@ app.get("/current-song", async (req, res) => {
     res.send(currentSong)
 })
 
-app.get('/testpage', async (req, res) => {
-    // should get my songs from my run last weekend
-    const playlist = await getSongsByActivity(req.session.athlete_id, 12082763957)
+app.get('/testpage/:activity', async (req, res) => {
+    const playlist = await getSongsByActivity(req.session.athlete_id, req.params.activity)
     res.send(playlist)
 })
 
