@@ -83,10 +83,10 @@ app.get('/authStatus', (req, res) => {
 })
 
 // not used
-app.get("/last50", async (req, res) => {
+app.get("/first50/:time", async (req, res) => {
     const spotifyAccessToken = await getSpotifyToken(req.session.athlete_id)
     console.log(spotifyAccessToken)
-    const end_time = Date.now()
+    const end_time = req.params.time
     const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
         method: 'GET',
         headers: {
