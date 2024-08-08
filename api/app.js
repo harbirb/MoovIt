@@ -93,9 +93,9 @@ app.get("/last50", async (req, res) => {
             'Authorization': 'Bearer ' + spotifyAccessToken
         }
     })
-    console.log(songsBeforeEndResponse)
     const songsBeforeEnd = await songsBeforeEndResponse.json()
     console.log(songsBeforeEnd)
+    res.send(songsBeforeEnd.items.map(obj => obj.track.name))
 })
 
 app.get("/current-song", async (req, res) => {
@@ -234,7 +234,7 @@ app.get("/recent-activities", async (req, res) => {
         const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
                 before: Date.now() /1000,
-                after: (Date.now()- 14 * 24 * 60 * 60 *1000 ) / 1000
+                after: (Date.now()- 4 * 24 * 60 * 60 *1000 ) / 1000
             }, 
             headers: {
                 'Authorization': 'Bearer ' + strava_token
