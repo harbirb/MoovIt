@@ -6,6 +6,10 @@ function populateTable(data) {
         title.textContent = item.name
         const date = document.createElement("h3")
         date.textContent = item.start_date
+        const anchor = document.createElement('a')
+        anchor.href = `https://www.strava.com/activities/${item.activity_id}`
+        anchor.textContent = "View on Strava"
+        anchor.style.textDecoration = 'underline';
         const songs = document.createElement("p")
         if (item.playlist.length > 0) {
             songs.innerHTML = item.playlist.join('<br>')
@@ -16,6 +20,7 @@ function populateTable(data) {
         
         row.appendChild(title)
         row.appendChild(date)
+        row.appendChild(anchor)
         row.appendChild(songs)
         tableBody.appendChild(row)
     })

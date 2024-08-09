@@ -247,7 +247,7 @@ app.get("/recent-activities", async (req, res) => {
         const activityPromises = recentActivitiesList.map(async (activity) => {
             const {name, distance, start_date, id: activity_id} = activity            
             const playlist = await getSongsByActivity(req.session.athlete_id, activity_id)
-            return {name, distance, start_date, playlist}
+            return {name, distance, start_date, playlist, activity_id}
         })
         let activityPlaylistArray = await Promise.all(activityPromises)
         res.send(activityPlaylistArray)
