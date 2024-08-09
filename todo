@@ -1,7 +1,9 @@
 <!-- 
 
 ISSUE - recent-activities doesn't get songs for activities from over a day ago
-- Limitation of Spotify API, only stores a limited number of songs
+- Limitation of Spotify API, only stores a limited number of songs???
+
+
 Fix the recently played page to show activities over the previous weeks
 - make it look nice too
 

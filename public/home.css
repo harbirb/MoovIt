@@ -1,0 +1,25 @@
+/* Apply flexbox to the wrapper */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure it covers the full viewport height */
+    overflow: hidden;
+}
+
+main {
+    flex: 1; /* Main content takes the remaining space */
+}
+
+footer {
+    display: flex;
+    flex-shrink: 0; /* Footer stays at the bottom */
+    text-align: center; /* Center text in the footer */
+    padding: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+footer img {
+    margin: 0 10%;
+    max-width: 150px;
+}
