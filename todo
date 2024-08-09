@@ -11,13 +11,18 @@ Change name of page to MoovIt
 
 Apply to Strava so friends can try it out
 
+Set an alert for API overload response
+
+create new strava client for dev purposes (no need for spotify since it can have several callback domains)
+
 Create FAQ on main page
 - why are some songs not showing up
 - how 
 
 
-
 --------------------------------------------------------------------------
+
+Create caching ability to limit API calls to spotify, store as activity-playlist objects
 
 Build static html pages, populate the fields using response data
 - display songs as playable items
