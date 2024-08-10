@@ -25,9 +25,7 @@ mongoose.connect(MONGODB_URI).then(() => {
   });
 
   
-app.use(authenticate)
-app.use(express.static(path.resolve(__dirname, '../public')))
-app.use(express.json())
+
 
 app.use(session({
     store: MongoStore.create({mongoUrl: MONGODB_URI}),
@@ -35,6 +33,11 @@ app.use(session({
     resave: false,
     saveUninitialized: true
   }));
+app.use(authenticate)
+app.use(express.static(path.resolve(__dirname, '../public')))
+app.use(express.json())
+
+
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`)
