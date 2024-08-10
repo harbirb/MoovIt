@@ -66,17 +66,13 @@ const User = mongoose.model("User", userSchema)
 
 
 function authenticate(req, res, next) {
-    if (req.session) {
-        console.log("session exists")
-        if (req.session.athlete_id || req.path == "/") {
-            console.log("session_athlete_id exists or user is at homepage")
-            return next();
-        } else {
-            return res.status(401).send({ message: 'Invalid session, no athlete_id' })
-        }
-    } else {
-        console.log("no session exists")
+    if (req.session && req.session.athlete_id) {
         return next()
+    }
+    else if (req.path === '/') {
+        return next()
+    } else {
+        return res.redirect('/')
     }
 }
 
