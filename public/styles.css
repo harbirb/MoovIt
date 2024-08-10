@@ -2,7 +2,7 @@
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 60px;
+    min-width: 60px;
     height: 34px;
     transform: scale(0.7);
 }
@@ -11,7 +11,8 @@
     display: flex;
     align-items: center; 
     gap: 10px;
-    /* align-content: center; */
+    align-content: center;
+    
 }
 
 /* Hide the default checkbox */
@@ -80,5 +81,10 @@ footer {
 
 footer img {
     margin: 0 10%;
-    max-width: 150px;
+    max-width: 30%;
 }
+
+body {
+    margin: auto;
+    padding: auto;
+  }
