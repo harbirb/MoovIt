@@ -24,6 +24,8 @@ mongoose.connect(MONGODB_URI).then(() => {
     console.error('Failed to connect to MongoDB Atlas', err);
   });
 
+  
+app.use(authenticate)
 app.use(express.static(path.resolve(__dirname, '../public')))
 app.use(express.json())
 
@@ -59,12 +61,12 @@ const userSchema = new mongoose.Schema({
 })
 const User = mongoose.model("User", userSchema)
 
-// not used
+
 function authenticate(req, res, next) {
-    if (req.session.stravaTokenInfo.athlete_id || req.path == "/") {
+    if (req.session.athlete_id !== null || req.path === "/") {
         next();
     }
-    res.status(401).json({ message: 'Unauthorized' });
+    res.status(401).json({ message: 'Invalid session, no athlete_id' });
 }
 
 app.get('/', async (req, res) => {
