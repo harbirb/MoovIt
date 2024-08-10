@@ -64,12 +64,17 @@ const User = mongoose.model("User", userSchema)
 
 function authenticate(req, res, next) {
     if (req.session) {
-        if (req.session.athlete_id || req.path === "/") {
+        console.log("session exists")
+        if (req.session.athlete_id || req.path == "/") {
+            console.log("session_athlete_id exists or user is at homepage")
             return next();
         } else {
             return res.status(401).send({ message: 'Invalid session, no athlete_id' })
         }
-    } else return next()
+    } else {
+        console.log("no session exists")
+        return next()
+    }
 }
 
 app.get('/', async (req, res) => {
