@@ -63,7 +63,7 @@ const User = mongoose.model("User", userSchema)
 
 
 function authenticate(req, res, next) {
-    if (req.session.athlete_id !== null || req.path === "/") {
+    if ((req.session && req.session.athlete_id) || req.path === "/") {
         next();
     }
     res.status(401).json({ message: 'Invalid session, no athlete_id' });
