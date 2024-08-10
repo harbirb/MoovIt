@@ -37,7 +37,7 @@ toggleButton.addEventListener('change', async () => {
         statusText.textContent = 'Off';
     }
     try {
-        await fetch('/user/toggleIsSubscribed', {
+        await fetch('/api/user/toggleIsSubscribed', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -51,7 +51,7 @@ toggleButton.addEventListener('change', async () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const response = await fetch('/user/isSubscribed')
+        const response = await fetch('/api/user/isSubscribed')
         toggleButton.checked = await response.json()
         statusText.textContent = toggleButton.checked ? 'On' : 'Off'
     } catch (error) {
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const response = await fetch('/recent-activities')
+        const response = await fetch('/api/recent-activities')
         const activityPlaylistArray = await response.json()
         populateTable(activityPlaylistArray)
     } catch (error) {

@@ -26,18 +26,24 @@ mongoose.connect(MONGODB_URI).then(() => {
 
   
 
-
+// MIDDLEWARE
 app.use(session({
     store: MongoStore.create({mongoUrl: MONGODB_URI}),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true
   }));
-app.use(authenticate)
+app.use("/api", authenticate)
 app.use(express.static(path.resolve(__dirname, '../public')))
 app.use(express.json())
 
-
+function authenticate(req, res, next) {
+    if (req.session && req.session.athlete_id) {
+        return next()
+    } else {
+        return res.redirect('/')
+    }
+}
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`)
@@ -65,16 +71,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema)
 
 
-function authenticate(req, res, next) {
-    if (req.session && req.session.athlete_id) {
-        return next()
-    }
-    else if (req.path === '/') {
-        return next()
-    } else {
-        return res.redirect('/')
-    }
-}
+
 
 app.get('/', async (req, res) => {
     res.sendFile(path.resolve(__dirname, "../public/home.html"))
@@ -92,7 +89,7 @@ app.get('/authStatus', (req, res) => {
 })
 
 // not used
-app.get("/first50/:time", async (req, res) => {
+app.get("/api/first50/:time", async (req, res) => {
     const spotifyAccessToken = await getSpotifyToken(req.session.athlete_id)
     console.log(spotifyAccessToken)
     const end_time = req.params.time
@@ -107,7 +104,7 @@ app.get("/first50/:time", async (req, res) => {
     res.send(songsBeforeEnd.items.map(obj => obj.track.name))
 })
 
-app.get("/current-song", async (req, res) => {
+app.get("/api/current-song", async (req, res) => {
     const spotifyAccessToken = await getSpotifyToken(req.session.athlete_id)
     const currentSongResponse = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
       method: 'GET',
@@ -120,7 +117,7 @@ app.get("/current-song", async (req, res) => {
     res.send(currentSong)
 })
 
-app.get('/testpage/:activity', async (req, res) => {
+app.get('/api/testpage/:activity', async (req, res) => {
     const playlist = await getSongsByActivity(req.session.athlete_id, req.params.activity)
     res.send(playlist)
 })
@@ -235,7 +232,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
 
 // DATA SAVER MUST BE TURNED OFF IN APP SETTINGS
 // IN PHONE SETTINGS, ALLOW BACKGROUND DATA USAGE FOR SPOTIFY
-app.get("/recent-activities", async (req, res) => {
+app.get("/api/recent-activities", async (req, res) => {
     // get activities in the last week
     const athlete_id = req.session.athlete_id
     const strava_token = await getStravaToken(athlete_id)
@@ -265,7 +262,7 @@ app.get("/recent-activities", async (req, res) => {
     }    
 })
 
-app.get("/user/isSubscribed", async (req, res) => {
+app.get("/api/user/isSubscribed", async (req, res) => {
     try {
         const isSubscribed = await isAthleteSubscribed(req.session.athlete_id)
         res.status(200).send(isSubscribed)
@@ -275,7 +272,7 @@ app.get("/user/isSubscribed", async (req, res) => {
     }
 })
 
-app.post("/user/toggleIsSubscribed", async (req, res) => {
+app.post("/api/user/toggleIsSubscribed", async (req, res) => {
     try {
         const {newSubscriptionStatus} = req.body
         console.log("new status is", newSubscriptionStatus)
