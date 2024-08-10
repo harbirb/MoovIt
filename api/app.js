@@ -77,7 +77,7 @@ app.get('/', async (req, res) => {
     res.sendFile(path.resolve(__dirname, "../public/home.html"))
 })
 
-app.get('/recentlyPlayed', async (req, res) => {
+app.get('/recentlyPlayed', authenticate, async (req, res) => {
     res.sendFile(path.resolve(__dirname, "../public/showSongs.html"))
 })
 
@@ -251,9 +251,9 @@ app.get("/api/recent-activities", async (req, res) => {
         
         // get the playlist associated with each activity
         const activityPromises = recentActivitiesList.map(async (activity) => {
-            const {name, distance, start_date, id: activity_id} = activity            
+            const {name, distance, start_date_local, id: activity_id} = activity            
             const playlist = await getSongsByActivity(req.session.athlete_id, activity_id)
-            return {name, distance, start_date, playlist, activity_id}
+            return {name, distance, start_date_local, playlist, activity_id}
         })
         let activityPlaylistArray = await Promise.all(activityPromises)
         res.send(activityPlaylistArray)

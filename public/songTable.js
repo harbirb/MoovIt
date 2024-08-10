@@ -5,7 +5,18 @@ function populateTable(data) {
         const title = document.createElement("h2")
         title.textContent = item.name
         const date = document.createElement("h3")
-        date.textContent = item.start_date
+        const dateObj = new Date(item.start_date_local)
+        const options = {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true
+
+        }
+        const formattedDate = dateObj.toLocaleTimeString('en-US', options)
+        date.textContent = formattedDate
         const anchor = document.createElement('a')
         anchor.href = `https://www.strava.com/activities/${item.activity_id}`
         anchor.textContent = "View on Strava"
