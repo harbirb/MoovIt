@@ -372,11 +372,11 @@ async function getSpotifyToken(athlete_id) {
 }
 
 // Event data is sent here
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
     console.log("webhook event received!", req.body)
     const {object_type, object_id, aspect_type, owner_id} = req.body
     res.status(200).send('EVENT_RECEIVED')
-    if (isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
+    if (await isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
         // call a function to post songs to the users activity description
         postToActivity(owner_id, object_id)
     }
