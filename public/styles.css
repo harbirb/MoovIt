@@ -68,23 +68,31 @@ input:checked + .slider:before {
 
 main {
     flex: 1; /* Main content takes the remaining space */
+    text-align: center;
 }
 
 footer {
     display: flex;
     flex-shrink: 0; /* Footer stays at the bottom */
     text-align: center; /* Center text in the footer */
-    padding: 10px;
     align-items: center;
     justify-content: center;
 }
 
-footer img {
-    margin: 0 10%;
-    max-width: 30%;
+
+.logo {
+    width: 120px;
+    margin: auto;
 }
 
 body {
     margin: auto;
     padding: auto;
-  }
+    text-align: center;
+}
+
+.image {
+    margin: auto;
+    max-width: 300px;
+}
+

@@ -7,6 +7,8 @@ create new strava client for dev purposes (no need for spotify since it can have
 
 Set an alert for API overload response
 
+Redo webhooks to go to moovit.onrender.com instead of strava-app.onrender.com
+
 Create FAQ on main page
 - why are some songs not showing up
 
