@@ -442,6 +442,9 @@ async function getSongsByActivity(athlete_id, activity_id) {
                 'Authorization': 'Bearer ' + spotifyAccessToken
             }
         })
+        if (!songsAfterStartResponse.ok) {
+            console.error("Error: ", songsAfterStartResponse.status, songsAfterStartResponse.statusText)
+        }
         const songsAfterStart = await songsAfterStartResponse.json()
         const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
             method: 'GET',
