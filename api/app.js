@@ -404,7 +404,7 @@ async function postToActivity(athlete_id, activity_id) {
         }
         const songString = songArray.join('\n')
         const stravaAccessToken = await getStravaToken(athlete_id)
-        let activityDescription = songString + '\n' + "- MoovIt 🐮"
+        let activityDescription = songString + '\n' + "- MoovIt 🐮 [moovit.onrender.com]"
         const response = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}`, {
             method: "PUT",
             headers: {
