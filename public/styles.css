@@ -80,6 +80,9 @@ footer {
     justify-content: center;
 }
 
+button:hover {
+    transform: scale(1.08);
+}
 
 .logo {
     display: flex;
@@ -98,6 +101,7 @@ body {
 
 .image {
     margin: auto;
-    max-width: 300px;
+    margin-bottom: 5%;
+    max-width: 350px;
 }
 
