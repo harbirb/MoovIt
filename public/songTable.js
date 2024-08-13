@@ -25,7 +25,6 @@ function populateTable(data) {
         if (item.playlist.length > 0) {
             songs.innerHTML = item.playlist.join('<br>')
         } else {
-            // this should be returned by the API instead when no songs found
             songs.innerHTML = "No songs found for this activity"
         }
         
