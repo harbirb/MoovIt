@@ -15,7 +15,7 @@ function populateTable(data) {
             hour12: true
 
         }
-        const formattedDate = dateObj.toLocaleTimeString('en-US', options)
+        const formattedDate = dateObj.toLocaleString('en-US', options)
         date.textContent = formattedDate
         const anchor = document.createElement('a')
         anchor.href = `https://www.strava.com/activities/${item.activity_id}`
