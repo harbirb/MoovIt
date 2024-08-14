@@ -122,3 +122,17 @@ body {
 .icon {
     max-width: 30px;
 }
+
+.loading {
+    display: none;
+    font-size: 30px;
+    margin: 50px auto;
+    border: 10px;
+    animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(360deg) scale(2); }
+    100% { transform: rotate(720deg) scale(1); }
+  }

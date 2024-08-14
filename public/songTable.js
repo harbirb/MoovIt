@@ -68,10 +68,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error fetching user preferences:', error)
     }
 
+    document.getElementById("loading").style.display = "block"
     try {
         const response = await fetch('/api/recent-activities')
         const activityPlaylistArray = await response.json()
         populateTable(activityPlaylistArray)
+        document.getElementById("loading").style.display = "none"
     } catch (error) {
         console.log('Error in fetching recent activities', error)
     }
