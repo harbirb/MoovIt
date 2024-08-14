@@ -70,6 +70,16 @@ const userSchema = new mongoose.Schema({
 })
 const User = mongoose.model("User", userSchema)
 
+const activitySoundtrackSchema = new mongoose.Schema({
+    activity_id: Number,
+    athlete_id: Number,
+    tracks: [{
+        track_name: String,
+        track_artists: [String],
+        link: String
+    }]
+})
+const ActivitySoundtrack = mongoose.model("ActivitySoundtrack", activitySoundtrackSchema)
 
 
 
@@ -118,8 +128,8 @@ app.get("/api/current-song", async (req, res) => {
 })
 
 app.get('/api/testpage/:activity', async (req, res) => {
-    const playlist = await getSongsByActivity(req.session.athlete_id, req.params.activity)
-    res.send(playlist)
+    const soundtrack = await getActivitySoundtrack(req.session.athlete_id, req.params.activity)
+    res.send(soundtrack)
 })
 
 app.get('/auth/strava', (req, res) => {
@@ -247,12 +257,12 @@ app.get("/api/recent-activities", async (req, res) => {
             }
         })
         // only show 5 recent activities
-        const recentActivitiesList = recentActivities.data.slice(0, 5)        
+        const recentActivitiesList = recentActivities.data.slice(0, 2)        
         
         // get the playlist associated with each activity
         const activityPromises = recentActivitiesList.map(async (activity) => {
             const {name, distance, start_date_local, id: activity_id} = activity            
-            const playlist = await getSongsByActivity(req.session.athlete_id, activity_id)
+            const playlist = await getActivitySoundtrack(req.session.athlete_id, activity_id)
             return {name, distance, start_date_local, playlist, activity_id}
         })
         let activityPlaylistArray = await Promise.all(activityPromises)
@@ -398,7 +408,7 @@ async function isAthleteSubscribed(athlete_id) {
 
 async function postToActivity(athlete_id, activity_id) {
     try {
-        const songArray = await getSongsByActivity(athlete_id, activity_id)
+        const songArray = await getActivitySoundtrack(athlete_id, activity_id)
         if (songArray.length == 0) {
             return
         }
@@ -423,7 +433,34 @@ async function postToActivity(athlete_id, activity_id) {
     }
 }
 
-async function getSongsByActivity(athlete_id, activity_id) {
+// returns a soundtrack: an array of objects
+// {
+//     track_name: string,
+//     track_artists: [string],
+//     link: string
+// }
+async function getActivitySoundtrack(athlete_id, activity_id) {
+    // search DB to see if an activitySoundtrack document already exists
+    try {
+        const activitySoundtrackDocument = await ActivitySoundtrack.findOne({activity_id: activity_id, athlete_id: athlete_id})
+        if (activitySoundtrackDocument) {
+            console.log("Found activitySoundtrack in DB")
+            return activitySoundtrackDocument.tracks
+        }
+    } catch (error) {
+        console.log("Error finding activitySoundtrack in DB: ", error)
+    }    
+    // if soundtrack does not exist in DB, fetch from respective APIs
+    try {
+        const soundtrack = await fetchActivitySoundtrack(athlete_id, activity_id)
+        return soundtrack
+    } catch (error) {
+        console.error("error in fetching activitySoundrack", error)
+    }
+}
+
+// fetches data from API calls and caches in DB
+async function fetchActivitySoundtrack(athlete_id, activity_id) {
     try {
         stravaAccessToken = await getStravaToken(athlete_id)
         spotifyAccessToken = await getSpotifyToken(athlete_id)
@@ -445,23 +482,40 @@ async function getSongsByActivity(athlete_id, activity_id) {
         if (!songsAfterStartResponse.ok) {
             console.error("Error: ", songsAfterStartResponse.status, songsAfterStartResponse.statusText)
         }
-        const songsAfterStart = await songsAfterStartResponse.json()
+        var songsAfterStart = await songsAfterStartResponse.json()
         const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + spotifyAccessToken
             }
         })
-        const songsBeforeEnd = await songsBeforeEndResponse.json()
+        var songsBeforeEnd = await songsBeforeEndResponse.json()
+    } catch (error) {
+        console.error("error in fetching data from API calls", error)
+    }
+
+    try {
         const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
         const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
-        let activityPlaylist = songsDuringActivity.map(obj => {
-            return `${obj.track.name} - ${obj.track.artists.map(artist => artist.name).join(", ")}`
+        let soundtrack = songsDuringActivity.map(obj => {
+            return {
+                track_name: obj.track.name,
+                track_artists: obj.track.artists.map(artist => artist.name),
+                link: obj.track.external_urls.spotify
+            }
         })
-        return activityPlaylist.reverse()
+        soundtrack.reverse()
+        // store a new activitySoundtrack in DB
+        await ActivitySoundtrack.create({
+            activity_id: activity_id,
+            athlete_id: athlete_id,
+            tracks: soundtrack
+        })
+        console.log("saved activitySoundtrack to DB")
+        return soundtrack
     } catch (error) {
-        console.log("Error", error)
-    }
+        console.error("error in aggregating songs, or saving to DB", error)
+    }        
 }
 
 // Validates the callback address
