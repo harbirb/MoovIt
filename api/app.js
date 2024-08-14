@@ -257,16 +257,16 @@ app.get("/api/recent-activities", async (req, res) => {
             }
         })
         // only show 5 recent activities
-        const recentActivitiesList = recentActivities.data.slice(0, 2)        
+        const recentActivitiesList = recentActivities.data.slice(0, 5)        
         
         // get the playlist associated with each activity
         const activityPromises = recentActivitiesList.map(async (activity) => {
             const {name, distance, start_date_local, id: activity_id} = activity            
-            const playlist = await getActivitySoundtrack(req.session.athlete_id, activity_id)
-            return {name, distance, start_date_local, playlist, activity_id}
+            const soundtrack = await getActivitySoundtrack(req.session.athlete_id, activity_id)
+            return {name, distance, start_date_local, soundtrack, activity_id}
         })
-        let activityPlaylistArray = await Promise.all(activityPromises)
-        res.send(activityPlaylistArray)
+        let activitySoundtrackArray = await Promise.all(activityPromises)
+        res.send(activitySoundtrackArray)
     } catch (error) {
         console.log(error)
     }    
@@ -408,13 +408,16 @@ async function isAthleteSubscribed(athlete_id) {
 
 async function postToActivity(athlete_id, activity_id) {
     try {
-        const songArray = await getActivitySoundtrack(athlete_id, activity_id)
-        if (songArray.length == 0) {
+        const soundtrack = await getActivitySoundtrack(athlete_id, activity_id)
+        if (soundtrack.length == 0) {
             return
         }
-        const songString = songArray.join('\n')
+        const songArtistStringArray = soundtrack.map(track => {
+            return `${track.track_name} - ${track.track_artists.join(', ')}`
+        })
+        const uploadString = songArtistStringArray.join('\n')
         const stravaAccessToken = await getStravaToken(athlete_id)
-        let activityDescription = songString + '\n' + "- MoovIt 🐮 [moovit.onrender.com]"
+        let activityDescription = uploadString + '\n' + "- MoovIt 🐮 [moovit.onrender.com]"
         const response = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}`, {
             method: "PUT",
             headers: {

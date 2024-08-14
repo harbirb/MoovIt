@@ -23,7 +23,7 @@ function populateTable(data) {
         anchor.style.textDecoration = 'underline';
         const songs = document.createElement("p")
         if (item.playlist.length > 0) {
-            songs.innerHTML = item.playlist.join('<br>')
+            songs.innerHTML = item.soundtrack.map(track => track.track_name).join('<br>')
         } else {
             songs.innerHTML = "No songs found for this activity"
         }
