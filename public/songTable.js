@@ -17,17 +17,25 @@ function populateTable(data) {
         }
         const formattedDate = dateObj.toLocaleString('en-US', options)
         date.textContent = formattedDate
-        const anchor = document.createElement('a')
-        anchor.href = `https://www.strava.com/activities/${item.activity_id}`
-        anchor.textContent = "View on Strava"
-        anchor.style.textDecoration = 'underline';
-        const songs = document.createElement("p")
-        if (item.playlist.length > 0) {
-            songs.innerHTML = item.soundtrack.map(track => track.track_name).join('<br>')
+        const activityLink = document.createElement('a')
+        activityLink.href = `https://www.strava.com/activities/${item.activity_id}`
+        activityLink.textContent = "View on Strava"
+        activityLink.style.textDecoration = 'underline'
+        const songs = document.createElement("div")
+        if (item.soundtrack.length > 0) {
+            item.soundtrack.map(track => {
+                const songLink = document.createElement('a')
+                songLink.href = track.link
+                const songName = document.createElement('p')
+                songName = track.track_name
+                const songArtists = document.createElement('p')
+                songArtists = track.track_artists.join(', ')
+                songLink.append(songName, songArtists)
+                songs.append(songLink)
+            })
         } else {
             songs.innerHTML = "No songs found for this activity"
-        }
-        
+        }        
         row.appendChild(title)
         row.appendChild(date)
         row.appendChild(anchor)
