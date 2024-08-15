@@ -1,10 +1,13 @@
 function populateTable(data) {
     const tableBody = document.querySelector("#songTable tbody")
     data.forEach(item => {
-        const row = document.createElement("tr")
+        const row = document.createElement("td")
+        row.className = 'activityContainer'
         const title = document.createElement("h2")
+        title.className = 'activityTitle'
         title.textContent = item.name
         const date = document.createElement("h3")
+        date.className = "activityDate"
         const dateObj = new Date(item.start_date_local)
         const options = {
             year: "numeric",
@@ -20,7 +23,7 @@ function populateTable(data) {
         const activityLink = document.createElement('a')
         activityLink.href = `https://www.strava.com/activities/${item.activity_id}`
         activityLink.textContent = "View on Strava"
-        activityLink.style.textDecoration = 'underline'
+        activityLink.className = "activityLink"
         const songs = document.createElement("div")
         songs.className = "songList"
         if (item.soundtrack.length > 0) {
