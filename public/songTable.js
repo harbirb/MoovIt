@@ -27,9 +27,9 @@ function populateTable(data) {
                 const songLink = document.createElement('a')
                 songLink.href = track.link
                 const songName = document.createElement('p')
-                songName = track.track_name
+                songName.textContent = track.track_name
                 const songArtists = document.createElement('p')
-                songArtists = track.track_artists.join(', ')
+                songArtists.textContent = track.track_artists.join(', ')
                 songLink.append(songName, songArtists)
                 songs.append(songLink)
             })
