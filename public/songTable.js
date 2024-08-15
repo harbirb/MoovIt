@@ -38,7 +38,7 @@ function populateTable(data) {
         }        
         row.appendChild(title)
         row.appendChild(date)
-        row.appendChild(anchor)
+        row.appendChild(activityLink)
         row.appendChild(songs)
         tableBody.appendChild(row)
     })
