@@ -147,7 +147,7 @@ body {
 
 .songName {
     font-size: 11pt;
-    margin: -1px auto;
+    margin: -3px auto;
     margin-top: 0px;    
     text-overflow: ellipsis;
     overflow: hidden;
@@ -156,13 +156,14 @@ body {
 
 .songArtists {
     font-size: 8pt;
-    margin: -1px auto;
+    margin: -3px auto;
     color: #ccc;
 }
 
 .songList {
     display: flex;
     flex-direction: column;
+    gap: 2px;
 }
 
 .activityContainer {
