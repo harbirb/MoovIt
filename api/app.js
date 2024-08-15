@@ -224,7 +224,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
         const userProfileResponse = await fetch('https://api.spotify.com/v1/me', {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${spotifyAccessToken}`
+              'Authorization': `Bearer ${access_token}`
             }
           })
         const userProfile = await userProfileResponse.json()
@@ -240,7 +240,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
                 },
                 {new: true, runValidators: true}
             )
-            console.log("Linked spotify to this user", user)
+            console.log("Linked spotify to user: " + user.athlete_id)
         } catch (error) {
             console.log("error updating user", error)
         }
