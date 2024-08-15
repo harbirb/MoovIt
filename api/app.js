@@ -208,6 +208,8 @@ app.get('/auth/spotify/callback', async (req, res) => {
     if ('error' in req.query) {
         res.send("Error in auth: access denied")
     }
+    // TODO: HANDLE CASE WHERE USER ALREADY HAS CONNECTED TO SPOTIFY
+    // REQUESTING TOKENS IS ONLY REQUIRED FOR NEW USERS
     try {
         const response = await axios.post('https://accounts.spotify.com/api/token', {
             code: AUTH_CODE,
