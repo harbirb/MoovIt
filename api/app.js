@@ -428,6 +428,7 @@ async function postToActivity(athlete_id, activity_id) {
                 description: activityDescription
             })
         })
+        console.log("posted songs to " + athlete_id + "'s activity!")
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`)
         }
