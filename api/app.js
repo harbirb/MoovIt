@@ -168,13 +168,13 @@ app.get('/auth/strava/callback', async (req, res) => {
                 user.stravaRefreshToken = refresh_token
                 user.stravaTokenExpiresAt = expires_at
                 if (user.spotifyAccessToken) {
-                    res.session.spotifyLinked = true
+                    req.session.spotifyLinked = true
                 }
                 await user.save()
                 console.log("updated existing user")
             }
-        } catch {
-            console.log("error updating user")
+        } catch (error) {
+            console.log("error updating user", error)
         }
         req.session.stravaLinked = true
         res.redirect('/')
