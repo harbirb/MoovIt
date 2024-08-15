@@ -22,6 +22,7 @@ function populateTable(data) {
         activityLink.textContent = "View on Strava"
         activityLink.style.textDecoration = 'underline'
         const songs = document.createElement("div")
+        songs.className = "songList"
         if (item.soundtrack.length > 0) {
             item.soundtrack.map(track => {
                 const songLink = document.createElement('a')
