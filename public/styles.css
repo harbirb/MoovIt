@@ -142,12 +142,16 @@ body {
     display: inline-block;
     color: white;
     margin-right: auto;
+    max-width: 100%;
 }
 
 .songName {
-    font-size: 12pt;
+    font-size: 11pt;
     margin: -1px auto;
-    margin-top: 0px;
+    margin-top: 0px;    
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .songArtists {
