@@ -139,18 +139,26 @@ body {
 
 .songLink {
     display: inline-block;
-    margin: auto;
     text-align: left;
     color: white;
+    margin: 0px;
 }
 
 .songName {
-    font-size: 16px;
+    font-size: 15px;
     margin-bottom: 0px;
+    margin: 0px;
 }
 
 .songArtists {
-    font-size: 14px;
-    margin-top: 2px;
+    font-size: 12px;
+    margin: 0px;
+    margin-bottom: 1px;
     color: #ccc;
+}
+
+.songList {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
 }
