@@ -66,7 +66,8 @@ const userSchema = new mongoose.Schema({
     stravaTokenExpiresAt: Date,
     spotifyAccessToken: String,
     spotifyRefreshToken: String,
-    spotifyTokenExpiresAt: Date
+    spotifyTokenExpiresAt: Date,
+    spotifyEmail: String
 })
 const User = mongoose.model("User", userSchema)
 
@@ -142,6 +143,8 @@ app.get('/auth/strava/callback', async (req, res) => {
     if ('error' in req.query) {
         res.redirect('/')
     }
+    // TODO: DONT GET NEW TOKEN UPON EVERY LOGIN EVENT
+    // ONLY NEEDED FOR A NEW USER
     try {
         const response = await axios.post("https://www.strava.com/oauth/token", {
             client_id: STRAVA_CLIENT_ID,
@@ -167,7 +170,7 @@ app.get('/auth/strava/callback', async (req, res) => {
                 user.stravaAccessToken = access_token
                 user.stravaRefreshToken = refresh_token
                 user.stravaTokenExpiresAt = expires_at
-                if (user.spotifyAccessToken) {
+                if (user.spotifyEmail) {
                     req.session.spotifyLinked = true
                 }
                 await user.save()
@@ -186,8 +189,7 @@ app.get('/auth/strava/callback', async (req, res) => {
 
 // request user authorization from spotify
 app.get('/auth/spotify', (req, res) => {
-    // var state = generateRandomString(16);
-    var scope = 'user-read-private user-read-email user-read-recently-played user-read-currently-playing';
+    var scope = 'user-read-private user-read-email user-read-recently-played';
     var state = 'klhgKJFhjdyFBkhfJGHL' 
 
   res.redirect('https://accounts.spotify.com/authorize?' +
@@ -219,15 +221,22 @@ app.get('/auth/spotify/callback', async (req, res) => {
         })
         const { access_token, expires_in, refresh_token } = response.data;
         const expires_at = Math.floor(Date.now()/1000) + expires_in
-        // TODO: delete below line after fixing token handler
-        req.session.spotifyTokenInfo = {access_token, refresh_token, expires_at: Math.floor(Date.now()/1000) + expires_in}
+        const userProfileResponse = await fetch('https://api.spotify.com/v1/me', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${spotifyAccessToken}`
+            }
+          })
+        const userProfile = await userProfileResponse.json()
         try {
             const user = await User.findOneAndUpdate(
                 {athlete_id: req.session.athlete_id},
                 {$set: {
                     spotifyAccessToken: access_token,
                     spotifyRefreshToken: refresh_token,
-                    spotifyTokenExpiresAt: expires_at}
+                    spotifyTokenExpiresAt: expires_at,
+                    spotifyEmail: userProfile.email
+                    }
                 },
                 {new: true, runValidators: true}
             )
