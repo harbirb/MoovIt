@@ -140,7 +140,7 @@ app.get('/auth/strava', (req, res) => {
 app.get('/auth/strava/callback', async (req, res) => {
     const AUTH_CODE = req.query.code
     if ('error' in req.query) {
-        res.send("Error in auth: access denied")
+        res.redirect('/')
     }
     try {
         const response = await axios.post("https://www.strava.com/oauth/token", {
