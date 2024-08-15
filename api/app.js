@@ -93,8 +93,8 @@ app.get('/recentlyPlayed', authenticate, async (req, res) => {
 
 app.get('/authStatus', (req, res) => {
     res.send({
-        spotify: req.session.spotifyLinked,
-        strava: req.session.stravaLinked
+        spotify: !!req.session.spotifyLinked,
+        strava: !!req.session.stravaLinked
     })
 })
 
@@ -167,6 +167,9 @@ app.get('/auth/strava/callback', async (req, res) => {
                 user.stravaAccessToken = access_token
                 user.stravaRefreshToken = refresh_token
                 user.stravaTokenExpiresAt = expires_at
+                if (user.spotifyAccessToken) {
+                    res.session.spotifyLinked = true
+                }
                 await user.save()
                 console.log("updated existing user")
             }

@@ -63,7 +63,7 @@
                         loginStravaButton.disabled = true
                         loginStravaButton.textContent = "Connected to Strava"
                     }
-                    if (authStatus.strava == false) {
+                    if (!!authStatus.strava == false) {
                         loginSpotifyButton.disabled = true
                     }
                     if (authStatus.spotify) {
