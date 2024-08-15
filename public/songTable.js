@@ -26,10 +26,13 @@ function populateTable(data) {
             item.soundtrack.map(track => {
                 const songLink = document.createElement('a')
                 songLink.href = track.link
+                songLink.className = "songLink"
                 const songName = document.createElement('p')
                 songName.textContent = track.track_name
+                songName.className = 'songName'
                 const songArtists = document.createElement('p')
                 songArtists.textContent = track.track_artists.join(', ')
+                songArtists.className = 'songArtists'
                 songLink.append(songName, songArtists)
                 songs.append(songLink)
             })
