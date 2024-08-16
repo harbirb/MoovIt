@@ -25,16 +25,22 @@ mongoose.connect(MONGODB_URI).then(() => {
   });
 
   
+const store = MongoStore.create({
+    mongoUrl: MONGODB_URI,
+    collectionName: 'sessions', 
+    ttl: 24 * 60 * 60 * 7 // Session expiration time in seconds (24 hours)
+});
 
 // MIDDLEWARE
 app.use(session({
-    store: MongoStore.create({mongoUrl: MONGODB_URI}),
+    store: store,
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production'
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 * 7
     }
   }));
 app.use("/api", authenticate)
