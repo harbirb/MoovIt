@@ -143,20 +143,30 @@ app.get('/auth/strava/callback', async (req, res) => {
     if ('error' in req.query) {
         res.redirect('/')
     }
-    // TODO: DONT GET NEW TOKEN UPON EVERY LOGIN EVENT
-    // ONLY NEEDED FOR A NEW USER
-    try {
-        const response = await axios.post("https://www.strava.com/oauth/token", {
-            client_id: STRAVA_CLIENT_ID,
-            client_secret: STRAVA_CLIENT_SECRET,
-            code: AUTH_CODE,
-            grant_type: 'authorization_code'
-        })
-        const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
-        req.session.athlete_id = athlete_id
+    const user = await User.findOne({athlete_id: athlete_id})
+    // if user already exists, set session variables
+    if (user) {
+        if (user.spotifyEmail) {
+            req.session.spotifyLinked = true
+        }
+    } else {
+        // if user does not exist, perform token exchange and create new user
         try {
-            const user = await User.findOne({athlete_id: athlete_id})
-            if (user == null) {
+            const tokenResponse = await fetch("https://www.strava.com/oauth/token", {
+                method: 'POST',
+                body: JSON.stringify({
+                    client_id: STRAVA_CLIENT_ID,
+                    client_secret: STRAVA_CLIENT_SECRET,
+                    code: AUTH_CODE,
+                    grant_type: 'authorization_code'
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }                
+            })
+            const tokenData = await tokenResponse.json()
+            const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = tokenData
+            try {
                 const newUser = new User({
                     athlete_id: athlete_id,
                     isSubscribed: false,
@@ -166,25 +176,16 @@ app.get('/auth/strava/callback', async (req, res) => {
                 })
                 await newUser.save()
                 console.log("created a new user")
-            } else {
-                user.stravaAccessToken = access_token
-                user.stravaRefreshToken = refresh_token
-                user.stravaTokenExpiresAt = expires_at
-                if (user.spotifyEmail) {
-                    req.session.spotifyLinked = true
-                }
-                await user.save()
-                console.log("updated existing user")
-            }
+            } catch (error) {
+                console.error("Error creating new user", error)
+            }            
         } catch (error) {
-            console.log("error updating user", error)
+            console.error("Error exchanging auth_code for token", error)
         }
-        req.session.stravaLinked = true
-        res.redirect('/')
     }
-    catch (error) {
-        console.error("Error in strava auth step", (error))
-    }
+    req.session.athlete_id = athlete_id
+    req.session.stravaLinked = true
+    res.redirect('/')
 })
 
 // request user authorization from spotify
@@ -208,8 +209,6 @@ app.get('/auth/spotify/callback', async (req, res) => {
     if ('error' in req.query) {
         res.send("Error in auth: access denied")
     }
-    // TODO: HANDLE CASE WHERE USER ALREADY HAS CONNECTED TO SPOTIFY
-    // REQUESTING TOKENS IS ONLY REQUIRED FOR NEW USERS
     try {
         const response = await axios.post('https://accounts.spotify.com/api/token', {
             code: AUTH_CODE,
