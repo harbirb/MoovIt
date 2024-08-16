@@ -151,7 +151,7 @@ app.get('/auth/strava', (req, res) => {
 app.get('/auth/strava/callback', async (req, res) => {
     const AUTH_CODE = req.query.code
     if ('error' in req.query) {
-        res.redirect('/')
+        return res.redirect('/')
     }
     try {
         const response = await axios.post("https://www.strava.com/oauth/token", {
@@ -188,6 +188,7 @@ app.get('/auth/strava/callback', async (req, res) => {
         }
         req.session.athlete_id = athlete_id
         req.session.stravaLinked = true
+        req.session.save()
         res.redirect('/')
     }
     catch (error) {
