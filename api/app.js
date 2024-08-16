@@ -143,8 +143,6 @@ app.get('/auth/strava/callback', async (req, res) => {
     if ('error' in req.query) {
         res.redirect('/')
     }
-    // TODO: DONT GET NEW TOKEN UPON EVERY LOGIN EVENT
-    // ONLY NEEDED FOR A NEW USER
     try {
         const response = await axios.post("https://www.strava.com/oauth/token", {
             client_id: STRAVA_CLIENT_ID,
@@ -153,7 +151,6 @@ app.get('/auth/strava/callback', async (req, res) => {
             grant_type: 'authorization_code'
         })
         const { expires_at, refresh_token, access_token, athlete: {id: athlete_id} } = response.data;
-        req.session.athlete_id = athlete_id
         try {
             const user = await User.findOne({athlete_id: athlete_id})
             if (user == null) {
@@ -177,8 +174,9 @@ app.get('/auth/strava/callback', async (req, res) => {
                 console.log("updated existing user")
             }
         } catch (error) {
-            console.log("error updating user", error)
+            console.log("error creating/updating user", error)
         }
+        req.session.athlete_id = athlete_id
         req.session.stravaLinked = true
         res.redirect('/')
     }
