@@ -31,7 +31,11 @@ app.use(session({
     store: MongoStore.create({mongoUrl: MONGODB_URI}),
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: true
+    }
   }));
 app.use("/api", authenticate)
 app.use(express.static(path.resolve(__dirname, '../public')))
@@ -204,10 +208,8 @@ app.get('/auth/spotify', (req, res) => {
 app.get('/auth/spotify/callback', async (req, res) => {
     const AUTH_CODE = req.query.code
     if ('error' in req.query) {
-        res.send("Error in auth: access denied")
+        res.redirect("/")
     }
-    // TODO: HANDLE CASE WHERE USER ALREADY HAS CONNECTED TO SPOTIFY
-    // REQUESTING TOKENS IS ONLY REQUIRED FOR NEW USERS
     try {
         const response = await axios.post('https://accounts.spotify.com/api/token', {
             code: AUTH_CODE,
