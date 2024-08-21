@@ -6,11 +6,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     async function checkAuthStatus() {
         try {
-            const response = await fetch('/authStatus')
+            const response = await fetch('/auth-status')
             const authStatus = await response.json()
             if (authStatus.strava) {
                 loginStravaButton.disabled = true
                 loginStravaButton.textContent = "Connected to Strava"
+            }
+            if (!!authStatus.strava == false) {
+                loginSpotifyButton.disabled = true
             }
             if (authStatus.spotify) {
                 loginSpotifyButton.disabled = true

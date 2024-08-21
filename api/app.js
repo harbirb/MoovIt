@@ -5,61 +5,58 @@ const session = require('express-session')
 const path = require('path')
 const querystring = require("querystring")
 const MongoStore = require('connect-mongo')
-
-
 require('dotenv').config()
 
+const {
+    STRAVA_CLIENT_ID,
+    STRAVA_CLIENT_SECRET,
+    SPOTIFY_CLIENT_ID,
+    SPOTIFY_CLIENT_SECRET,
+    MONGODB_URI,
+    BASE_URL,
+    SESSION_SECRET
+} = process.env;
 
-const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
-const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const MONGODB_URI = process.env.MONGODB_URI
-const BASE_URL = process.env.BASE_URL
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-mongoose.connect(MONGODB_URI).then(() => {
-    console.log('Connected to MongoDB Atlas');
-  }).catch((err) => {
-    console.error('Failed to connect to MongoDB Atlas', err);
-  });
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('Connected to MongoDB Atlas'))
+    .catch((err) => console.error('Failed to connect to MongoDB Atlas', err));
 
-  
-const store = MongoStore.create({
+const sessionStore = MongoStore.create({
     mongoUrl: MONGODB_URI,
-    collectionName: 'sessions', 
-    ttl: 24 * 60 * 60 * 7 // Session expiration time in seconds (24 hours)
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60 * 7 // 7 days
 });
 
 // MIDDLEWARE
 app.use(session({
-    store: store,
-    secret: process.env.SESSION_SECRET,
+    store: sessionStore,
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 * 7
+        maxAge: 24 * 60 * 60 * 1000 * 7 // 7 days
     }
-  }));
+}));
+
 app.use("/api", authenticate)
 app.use(express.static(path.resolve(__dirname, '../public')))
 app.use(express.json())
 
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`))
+
+// Authentication Middleware
 function authenticate(req, res, next) {
     if (req.session && req.session.athlete_id) {
-        return next()
-    } else {
-        return res.redirect('/')
+        return next();
     }
+    return res.redirect('/');
 }
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`)
-})
-
-module.exports = app;
-
+// Database Models
 const userSchema = new mongoose.Schema({
     athlete_id: {
         type: Number,
@@ -97,11 +94,11 @@ app.get('/', async (req, res) => {
     res.sendFile(path.resolve(__dirname, "../public/home.html"))
 })
 
-app.get('/recentlyPlayed', authenticate, async (req, res) => {
+app.get('/recently-played', authenticate, async (req, res) => {
     res.sendFile(path.resolve(__dirname, "../public/showSongs.html"))
 })
 
-app.get('/authStatus', (req, res) => {
+app.get('/auth-status', (req, res) => {
     res.send({
         spotify: !!req.session.spotifyLinked,
         strava: !!req.session.stravaLinked
