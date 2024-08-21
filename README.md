@@ -7,7 +7,7 @@ Things I learned:
 - **Integration of Third-Party APIs**: How to effectively use OAuth for authenticating with third-party services like Spotify and Strava.
 - **Token Management**: How to manage the exchange of tokens securely and maintain user sessions without requiring frequent re-authentication.
 - **Session Management and Persistence**: Implementing session management using express-session with MongoDB as a session store, ensuring persistence across server restarts.
--** Middleware Usage**: Applying custom middleware for authentication and access control across multiple routes in my application.
+- **Middleware Usage**: Applying custom middleware for authentication and access control across multiple routes in my application.
 - **Database Schema Design**: Structuring MongoDB schemas to store user data, access tokens, and application-specific data like activity soundtracks.
 - **Intelligent Caching**: Storing frequently accessed data to minimize repetitive API calls, thereby improving performance and reducing the load on external services.
 - **Handling Asynchronous Operations**: Handling asynchronous operations using async/await, including API calls and database queries, ensuring efficient data flow.
