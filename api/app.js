@@ -202,70 +202,75 @@ app.get('/auth/strava/callback', async (req, res) => {
     }
 })
 
-// request user authorization from spotify
 app.get('/auth/spotify', (req, res) => {
-    var scope = 'user-read-private user-read-email user-read-recently-played';
-    var state = 'klhgKJFhjdyFBkhfJGHL' 
+    const scope = 'user-read-private user-read-email user-read-recently-played'
+    const state = 'klhgKJFhjdyFBkhfJGHL' 
 
-  res.redirect('https://accounts.spotify.com/authorize?' +
-    querystring.stringify({
+  res.redirect('https://accounts.spotify.com/authorize?' + querystring.stringify({
       response_type: 'code',
       client_id: SPOTIFY_CLIENT_ID,
-      scope: scope,
-      state: state,
+      scope,
+      state,
       redirect_uri: `${BASE_URL}/auth/spotify/callback`
-    }));
+    }))
     
 })
 
+async function exchangeSpotifyAuthCodeForTokens(authCode) {
+    const response = await axios.post('https://accounts.spotify.com/api/token', {
+        code: authCode,
+        redirect_uri: `${BASE_URL}/auth/spotify/callback`,
+        grant_type: 'authorization_code'
+    }, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + (new Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'))
+        }
+    })
+    return response.data
+}
+
+async function fetchUserProfileData(accessToken) {
+    const response = await fetch('https://api.spotify.com/v1/me', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    })
+    return response.json()
+}
+
+async function updateUserWithSpotifyData(athlete_id, data) {
+    const user = await User.findOneAndUpdate(
+        { athlete_id: athlete_id },
+        { $set: data },
+        { new: true, runValidators: true }
+    )
+    console.log("Linked spotify to user:", user.athlete_id)
+}
+
 app.get('/auth/spotify/callback', async (req, res) => {
-    const AUTH_CODE = req.query.code
-    if ('error' in req.query) {
-        res.redirect("/")
+    const { code: AUTH_CODE, error } = req.query
+    if (error) {
+        return res.redirect('/')
     }
     try {
-        const response = await axios.post('https://accounts.spotify.com/api/token', {
-            code: AUTH_CODE,
-            redirect_uri: `${BASE_URL}/auth/spotify/callback`,
-            grant_type: 'authorization_code'
-        }, {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'Authorization': 'Basic ' + (new Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'))
-            }
-        })
-        const { access_token, expires_in, refresh_token } = response.data;
+        const { access_token, refresh_token, expires_in } = await exchangeSpotifyAuthCodeForTokens(AUTH_CODE)
         const expires_at = Math.floor(Date.now()/1000) + expires_in
-        const userProfileResponse = await fetch('https://api.spotify.com/v1/me', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${access_token}`
-            }
-          })
-        const userProfile = await userProfileResponse.json()
-        try {
-            const user = await User.findOneAndUpdate(
-                {athlete_id: req.session.athlete_id},
-                {$set: {
-                    spotifyAccessToken: access_token,
-                    spotifyRefreshToken: refresh_token,
-                    spotifyTokenExpiresAt: expires_at,
-                    spotifyEmail: userProfile.email
-                    }
-                },
-                {new: true, runValidators: true}
-            )
-            console.log("Linked spotify to user: " + user.athlete_id)
-        } catch (error) {
-            console.log("error updating user", error)
-        }
+        const userProfile = await fetchUserProfileData(access_token)
+        await updateUserWithSpotifyData(req.session.athlete_id, {
+            spotifyAccessToken: access_token,
+            spotifyRefreshToken: refresh_token,
+            spotifyTokenExpiresAt: expires_at,
+            spotifyEmail: userProfile.email
+        })
         req.session.spotifyLinked = true
         res.redirect('/')
     } catch (error) {
         console.error("Error in Spotify Auth Step", error)
+        res.status(500).send("Authentication failed")
     }
-}
-)
+})
 
 // DATA SAVER MUST BE TURNED OFF IN APP SETTINGS
 // IN PHONE SETTINGS, ALLOW BACKGROUND DATA USAGE FOR SPOTIFY
@@ -305,67 +310,81 @@ app.get("/api/user/isSubscribed", async (req, res) => {
         res.status(200).send(isSubscribed)
     } catch (error) {
         console.log("error checking subscription status", error)
-        res.status(500).send("internal server error")
+        res.status(500).send("Internal server error")
     }
 })
+
+async function updateUserSubscriptionStatus(athlete_id, newStatus) {
+    return User.updateOne(
+        { athlete_id: athlete_id },
+        { $set: { isSubscribed: newStatus } }
+    )
+}
 
 app.post("/api/user/toggleIsSubscribed", async (req, res) => {
     try {
         const {newSubscriptionStatus} = req.body
         console.log("new status is", newSubscriptionStatus)
-        const result = await User.updateOne(
-            {athlete_id: req.session.athlete_id},
-            {$set: {
-                    isSubscribed: newSubscriptionStatus
-                }
-            }
-        )
+        const result = await updateUserSubscriptionStatus(req.session.athlete_id, newSubscriptionStatus)
         if (result.nModified === 0) {
             return res.status(404).json({ message: 'User not found or no change in subscription status' })
         }
         res.status(200).send({ message: "updated subscription successfully" })
     } catch (error) {
-        console.log("Error in updating user's subscription", error)
+        console.error("Error in updating user's subscription", error)
     }
 })
 
-// returns a valid access token for strava api
+// Calls Strava API to refresh tokens
+async function refreshStravaTokens(refreshToken) {
+    const response = await axios.post('https://www.strava.com/oauth/token', {
+        client_id: STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken
+    })
+    if (!response.data.access_token) {
+        throw new Error("Invalid response from Strava API")
+    }
+    return response.data
+}
+
+// Stores updated Strava tokens in DB
+async function updateUserStravaTokens(athlete_id, access_token, refresh_token, expires_at) {
+    try {
+        await User.updateOne(
+            {athlete_id: athlete_id},
+            {$set: {
+                stravaAccessToken: access_token,
+                stravaRefreshToken: refresh_token,
+                stravaTokenExpiresAt: expires_at
+            }}
+        )
+        console.log("Updated Strava token data")
+    } catch (error) {
+        console.error("Error updating user's Strava token data", error)
+        throw error
+    }
+}
+
+// Returns a valid Strava access token
 async function getStravaToken(athlete_id) {
-    console.log("getting token for athlete :", athlete_id)
-    const user = await User.findOne({athlete_id: athlete_id})    
-    if (Date.now() > user.stravaTokenExpiresAt * 1000) {
-        console.log("strava token expired, getting new one")
-        try {
-            const response = await axios.post('https://www.strava.com/oauth/token', {
-                client_id: STRAVA_CLIENT_ID,
-                client_secret: STRAVA_CLIENT_SECRET,
-                grant_type: "refresh_token",
-                refresh_token: user.stravaRefreshToken
-            })
-            if (response.data.access_token) {
-                const {access_token, refresh_token, expires_at} = response.data
-                try {
-                    await User.updateOne(
-                        {athlete_id: athlete_id},
-                        {$set: {
-                            stravaAccessToken: access_token,
-                            stravaRefreshToken: refresh_token,
-                            stravaTokenExpiresAt: expires_at
-                        }}
-                    )
-                    console.log("updated strava token data")
-                } catch (error) {
-                    console.error("Error updating user's strava token data", error)
-                }
-                return access_token
-            } else {
-                throw new Error("invalid response")
-            }
-        } catch (error) {
-            console.error("Error in getting Strava Token", error)
-        }        
-    } else {
+    console.log("Getting token for athlete :", athlete_id)
+    const user = await User.findOne({athlete_id: athlete_id}) 
+    if (!user) {
+        throw new Error("User not found")
+    }
+    if (Date.now() <= user.stravaTokenExpiresAt * 1000) {
         return user.stravaAccessToken
+    }
+    console.log("Strava token expired, getting new one")
+    try {
+        const {access_token, refresh_token, expires_at} = await refreshStravaTokens(refresh_token)
+        await updateUserStravaTokens(athlete_id, access_token, refresh_token, expires_at)
+        return access_token
+    } catch (error) {
+        console.log("Error in getting Strava token")
+        throw error
     }
 }
 
