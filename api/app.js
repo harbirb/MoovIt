@@ -282,20 +282,19 @@ app.get("/api/recent-activities", async (req, res) => {
         const recentActivities = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
             params: {
                 before: Date.now() /1000,
-                after: (Date.now()- 7 * 24 * 60 * 60 *1000 ) / 1000
+                after: (Date.now()- 14 * 24 * 60 * 60 *1000 ) / 1000
             }, 
             headers: {
                 'Authorization': 'Bearer ' + strava_token
             }
         })
         // only show 5 recent activities
-        const recentActivitiesList = recentActivities.data.slice(0, 5)        
+        const recentActivitiesList = recentActivities.data.slice(0, 7)        
         
-        // get the playlist associated with each activity
         const activityPromises = recentActivitiesList.map(async (activity) => {
             const {name, distance, start_date_local, id: activity_id} = activity            
             const soundtrack = await getActivitySoundtrack(req.session.athlete_id, activity_id)
-            return {name, distance, start_date_local, soundtrack, activity_id}
+            return {name, distance, start_date_local, soundtrack, activity_id}  
         })
         let activitySoundtrackArray = await Promise.all(activityPromises)
         res.send(activitySoundtrackArray)
@@ -516,9 +515,15 @@ async function getActivitySoundtrack(athlete_id, activity_id) {
         console.log("Found activitySoundtrack in DB")
         return activitySoundtrackDocument.tracks
     }   
-    // if soundtrack does not exist in DB, fetch it
+    // if soundtrack does not exist in DB, compute it and save to DB
     try {
-        const soundtrack = await fetchActivitySoundtrack(athlete_id, activity_id)
+        const soundtrack = await generateActivitySoundtrack(athlete_id, activity_id)
+        await ActivitySoundtrack.create({
+            activity_id: activity_id,
+            athlete_id: athlete_id,
+            tracks: soundtrack
+        })
+        console.log("Saved soundtrack to DB")
         return soundtrack
     } catch (error) {
         console.error(`Error in fetching soundtrack for activity ${activity_id}`, error)
@@ -526,51 +531,46 @@ async function getActivitySoundtrack(athlete_id, activity_id) {
 }
 
 async function fetchActivityTimes(activityID, stravaAccessToken) {
-    try {
-        const activity = await fetch(`https://www.strava.com/api/v3/activities/${activityID}?include_all_efforts=false`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + stravaAccessToken
-            }
-        })
-        const {start_date, elapsed_time} = await activity.json()
-        const startTime = new Date(start_date).getTime()
-        const endTime = startTime + elapsed_time * 1000
-        return {startTime, endTime}
-    } catch (error) {
-        console.error("Error fetching Strava activity", error)
-        throw error
-    }        
+    const activityResponse = await fetch(`https://www.strava.com/api/v3/activities/${activityID}?include_all_efforts=false`, {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + stravaAccessToken
+        }
+    })
+    const {start_date, elapsed_time} = await activityResponse.json()
+    const startTime = new Date(start_date).getTime()
+    const endTime = startTime + elapsed_time * 1000
+    if (!activityResponse.ok) {
+        console.error("Invalid response from Strava API", activityResponse.json())
+        throw new Error("Error fetching activity time from Strava API")
+    }
+    return {startTime, endTime}
 }
 
-// fetches data from API calls and caches in DB
-async function fetchActivitySoundtrack(athlete_id, activity_id) {
-    try {
-        stravaAccessToken = await getStravaToken(athlete_id)
-        spotifyAccessToken = await getSpotifyToken(athlete_id)
-        const {startTime, endTime} = await fetchActivityTimes
-        const songsAfterStartResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&after=${start_time}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + spotifyAccessToken
-            }
-        })
-        if (!songsAfterStartResponse.ok) {
-            console.error("Error: ", songsAfterStartResponse.status, songsAfterStartResponse.statusText)
+async function fetchSongsByCutoffTime(cutoffTime, spotifyAccessToken) {
+    const recentlyPlayedSongs = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&${cutoffTime}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + spotifyAccessToken
         }
-        var songsAfterStart = await songsAfterStartResponse.json()
-        const songsBeforeEndResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&before=${end_time}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + spotifyAccessToken
-            }
-        })
-        var songsBeforeEnd = await songsBeforeEndResponse.json()
-    } catch (error) {
-        console.error("error in fetching data from API calls", error)
+    })
+    if (!recentlyPlayedSongs.ok) {
+        console.error(recentlyPlayedSongs.json())
+        throw new Error("Error fetching recent songs from Spotify API")
     }
+    return recentlyPlayedSongs.json()
+}
 
-    try {
+// Generates soundtrack from API calls
+async function generateActivitySoundtrack(athlete_id, activity_id) {
+    console.log("generating soundtrack for activity")
+    stravaAccessToken = await getStravaToken(athlete_id)
+    spotifyAccessToken = await getSpotifyToken(athlete_id)
+    try {        
+        const {startTime, endTime} = await fetchActivityTimes(activity_id, stravaAccessToken)
+        const songsAfterStart = await fetchSongsByCutoffTime(`after=${startTime}`, spotifyAccessToken)
+        const songsBeforeEnd = await fetchSongsByCutoffTime(`before=${endTime}`, spotifyAccessToken)
+
         const songSet = new Set(songsBeforeEnd.items.map(obj => obj.played_at))
         const songsDuringActivity = songsAfterStart.items.filter(obj => songSet.has(obj.played_at))
         let soundtrack = songsDuringActivity.map(obj => {
@@ -581,17 +581,11 @@ async function fetchActivitySoundtrack(athlete_id, activity_id) {
             }
         })
         soundtrack.reverse()
-        // store a new activitySoundtrack in DB
-        await ActivitySoundtrack.create({
-            activity_id: activity_id,
-            athlete_id: athlete_id,
-            tracks: soundtrack
-        })
-        console.log("saved activitySoundtrack to DB")
         return soundtrack
     } catch (error) {
-        console.error("error in aggregating songs, or saving to DB", error)
-    }        
+        console.error("Error generating activity soundtrack", error)
+        throw error
+    }
 }
 
 // Validates the callback address
