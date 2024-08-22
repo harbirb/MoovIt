@@ -452,47 +452,54 @@ app.post('/webhook', async (req, res) => {
     console.log("webhook event received!", req.body)
     const {object_type, object_id, aspect_type, owner_id} = req.body
     res.status(200).send('EVENT_RECEIVED')
+    await handleWebhookEvent(object_type, object_id, aspect_type, owner_id)
+})
+
+async function handleWebhookEvent(object_type, object_id, aspect_type, owner_id) {
     if (await isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
         postToActivity(owner_id, object_id)
     }
-})
+}
 
 // returns true if the athlete is subscribed (songs automatically posted to their activity)
 async function isAthleteSubscribed(athlete_id) {
     const user = await User.findOne({athlete_id: athlete_id})
-    return user.isSubscribed
+    return user?.isSubscribed ?? false
 }
 
+function formatActivityDescription(soundtrack) {
+    const songArtistStringArray = soundtrack.map(track => {
+        return `${track.track_name} - ${track.track_artists.join(', ')}`
+    })
+    return songArtistStringArray.join('\n') + "\n- MoovIt 🐮 [moovit.onrender.com]"
+}
 
+async function updateStravaActivity(activity_id, access_token, description) {
+    const response = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}`, {
+        method: "PUT",
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + access_token
+        },
+        body: JSON.stringify({ description })
+    })
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+}
 
 async function postToActivity(athlete_id, activity_id) {
     try {
         const soundtrack = await getActivitySoundtrack(athlete_id, activity_id)
-        if (soundtrack.length == 0) {
-            return
-        }
-        const songArtistStringArray = soundtrack.map(track => {
-            return `${track.track_name} - ${track.track_artists.join(', ')}`
-        })
-        const uploadString = songArtistStringArray.join('\n')
-        const stravaAccessToken = await getStravaToken(athlete_id)
-        let activityDescription = uploadString + '\n' + "- MoovIt 🐮 [moovit.onrender.com]"
-        const response = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}`, {
-            method: "PUT",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + stravaAccessToken
-            },
-            body: JSON.stringify({
-                description: activityDescription
-            })
-        })
-        console.log("posted songs to " + athlete_id + "'s activity!")
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`)
-        }
+        if (soundtrack.length == 0) return
+        
+        const activityDescription = formatActivityDescription(soundtrack)
+        const access_token = await getStravaToken(athlete_id)
+        
+        await updateStravaActivity(activity_id, access_token, activityDescription)
+        console.log(`Posted songs to ${athleteId}'s activity!`);
     } catch (error) {
-        console.log("error", error)
+        console.log("Error Posting to activity:", error)
     }
 }
 
@@ -511,7 +518,7 @@ async function getActivitySoundtrack(athlete_id, activity_id) {
             return activitySoundtrackDocument.tracks
         }
     } catch (error) {
-        console.log("Error finding activitySoundtrack in DB: ", error)
+        console.error("Error finding activitySoundtrack in DB: ", error)
     }    
     // if soundtrack does not exist in DB, fetch from respective APIs
     try {
