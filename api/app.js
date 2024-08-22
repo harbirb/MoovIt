@@ -230,11 +230,11 @@ async function exchangeSpotifyAuthCodeForTokens(authCode) {
     return response.data
 }
 
-async function fetchUserProfileData(accessToken) {
+async function fetchUserSpotifyProfile(spotifyAccessToken) {
     const response = await fetch('https://api.spotify.com/v1/me', {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${spotifyAccessToken}`
         }
     })
     return response.json()
@@ -257,7 +257,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
     try {
         const { access_token, refresh_token, expires_in } = await exchangeSpotifyAuthCodeForTokens(AUTH_CODE)
         const expires_at = Math.floor(Date.now()/1000) + expires_in
-        const userProfile = await fetchUserProfileData(access_token)
+        const userProfile = await fetchUserSpotifyProfile(access_token)
         await updateUserWithSpotifyData(req.session.athlete_id, {
             spotifyAccessToken: access_token,
             spotifyRefreshToken: refresh_token,
@@ -497,7 +497,7 @@ async function postToActivity(athlete_id, activity_id) {
         const access_token = await getStravaToken(athlete_id)
         
         await updateStravaActivity(activity_id, access_token, activityDescription)
-        console.log(`Posted songs to ${athleteId}'s activity!`);
+        console.log(`Posted songs to ${athlete_id}'s activity!`);
     } catch (error) {
         console.log("Error Posting to activity:", error)
     }
@@ -511,22 +511,36 @@ async function postToActivity(athlete_id, activity_id) {
 // }
 async function getActivitySoundtrack(athlete_id, activity_id) {
     // search DB to see if an activitySoundtrack document already exists
-    try {
-        const activitySoundtrackDocument = await ActivitySoundtrack.findOne({activity_id: activity_id, athlete_id: athlete_id})
-        if (activitySoundtrackDocument) {
-            console.log("Found activitySoundtrack in DB")
-            return activitySoundtrackDocument.tracks
-        }
-    } catch (error) {
-        console.error("Error finding activitySoundtrack in DB: ", error)
-    }    
-    // if soundtrack does not exist in DB, fetch from respective APIs
+    const activitySoundtrackDocument = await ActivitySoundtrack.findOne({activity_id: activity_id, athlete_id: athlete_id})
+    if (activitySoundtrackDocument) {
+        console.log("Found activitySoundtrack in DB")
+        return activitySoundtrackDocument.tracks
+    }   
+    // if soundtrack does not exist in DB, fetch it
     try {
         const soundtrack = await fetchActivitySoundtrack(athlete_id, activity_id)
         return soundtrack
     } catch (error) {
-        console.error("error in fetching activitySoundrack", error)
+        console.error(`Error in fetching soundtrack for activity ${activity_id}`, error)
     }
+}
+
+async function fetchActivityTimes(activityID, stravaAccessToken) {
+    try {
+        const activity = await fetch(`https://www.strava.com/api/v3/activities/${activityID}?include_all_efforts=false`, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + stravaAccessToken
+            }
+        })
+        const {start_date, elapsed_time} = await activity.json()
+        const startTime = new Date(start_date).getTime()
+        const endTime = startTime + elapsed_time * 1000
+        return {startTime, endTime}
+    } catch (error) {
+        console.error("Error fetching Strava activity", error)
+        throw error
+    }        
 }
 
 // fetches data from API calls and caches in DB
@@ -534,15 +548,7 @@ async function fetchActivitySoundtrack(athlete_id, activity_id) {
     try {
         stravaAccessToken = await getStravaToken(athlete_id)
         spotifyAccessToken = await getSpotifyToken(athlete_id)
-        const activity = await fetch(`https://www.strava.com/api/v3/activities/${activity_id}?include_all_efforts=false`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + stravaAccessToken
-            }
-        })
-        const {start_date, elapsed_time} = await activity.json()
-        const start_time = new Date(start_date).getTime()
-        const end_time = start_time + elapsed_time * 1000
+        const {startTime, endTime} = await fetchActivityTimes
         const songsAfterStartResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50&after=${start_time}`, {
             method: 'GET',
             headers: {
