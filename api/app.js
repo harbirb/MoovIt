@@ -379,7 +379,7 @@ async function getStravaToken(athlete_id) {
     }
     console.log("Strava token expired, getting new one")
     try {
-        const {access_token, refresh_token, expires_at} = await refreshStravaTokens(refresh_token)
+        const {access_token, refresh_token, expires_at} = await refreshStravaTokens(user.stravaRefreshToken)
         await updateUserStravaTokens(athlete_id, access_token, refresh_token, expires_at)
         return access_token
     } catch (error) {
@@ -388,48 +388,62 @@ async function getStravaToken(athlete_id) {
     }
 }
 
-// returns a valid access token for spotify api
+// Calls Spotify API to refresh tokens
+async function refreshSpotifyTokens(refresh_token) {
+    const response = await axios.post("https://accounts.spotify.com/api/token", {
+        grant_type: "refresh_token",
+        refresh_token: refresh_token
+    }, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + (new Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'))
+        }
+    })
+    if (!response.data.access_token) {
+        throw new Error("Invalid response from Spotify API")
+    }
+    const {access_token, expires_in} = response.data
+    const expires_at = Math.floor(Date.now()/1000) + expires_in
+    return {access_token, expires_at}
+}
+
+// Stores updated Spotify tokens in DB
+async function updateUserSpotifyTokens(athlete_id, access_token, expires_at) {
+    try {
+        await User.updateOne(
+            {athlete_id: athlete_id},
+            {$set: {
+                spotifyAccessToken: access_token,
+                spotifyTokenExpiresAt: expires_at
+            }}
+        )
+        console.log("Updated Spotify token data")
+    } catch (error) {
+        console.error("Error updating user's Spotify token data", error)
+        throw error
+    }
+}
+
+// Returns a valid Spotify access token
 // spotify api does not return a new refresh token, keep using same refresh token
 async function getSpotifyToken(athlete_id) {
-    console.log("getting token for athlete :", athlete_id)
+    console.log("Getting Spotify token for athlete :", athlete_id)
     const user = await User.findOne({athlete_id: athlete_id})
-    if (Date.now() > user.spotifyTokenExpiresAt * 1000) {
-        console.log("spotify token expired, getting new one")
-        try {
-            const response = await axios.post("https://accounts.spotify.com/api/token", {
-                grant_type: "refresh_token",
-                refresh_token: user.spotifyRefreshToken
-            }, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Basic ' + (new Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'))
-                }
-            })
-            if (response.data.access_token) {
-                const {access_token, expires_in} = response.data
-                const expires_at = Math.floor(Date.now()/1000) + expires_in
-                try {
-                    await User.updateOne(
-                        {athlete_id: athlete_id},
-                        {$set: {
-                            spotifyAccessToken: access_token,
-                            spotifyTokenExpiresAt: expires_at
-                        }}
-                    )
-                    console.log("updated spotify token data")
-                } catch (error) {
-                    console.log("error updating user's spotify token data", error)
-                }
-                console.log("Returned new access token!")
-                return access_token
-            } else {
-                console.log("could not get new access_token")
-            }
-        } catch (error) {
-            console.log("error in getting spotify token", error.response.data)
-        }
-    } else {
+    if (!user) {
+        throw new Error("User not found")
+    }
+    if (Date.now() <= user.spotifyTokenExpiresAt * 1000) {
         return user.spotifyAccessToken
+    }
+    console.log("Spotify token expired, getting new one")
+
+    try {
+        const {access_token, expires_at} = await refreshSpotifyTokens(user.spotifyRefreshToken)
+        await updateUserSpotifyTokens(athlete_id, access_token, expires_at)
+        return access_token
+    } catch (error) {
+        console.error("Error in getting Spotify token", error)
+        throw error
     }
 }
 
@@ -439,7 +453,6 @@ app.post('/webhook', async (req, res) => {
     const {object_type, object_id, aspect_type, owner_id} = req.body
     res.status(200).send('EVENT_RECEIVED')
     if (await isAthleteSubscribed(owner_id) && object_type == 'activity' && aspect_type == 'create') {
-        // call a function to post songs to the users activity description
         postToActivity(owner_id, object_id)
     }
 })
