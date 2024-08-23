@@ -288,7 +288,6 @@ app.get("/api/recent-activities", async (req, res) => {
                 'Authorization': 'Bearer ' + strava_token
             }
         })
-        // only show 5 recent activities
         const recentActivitiesList = recentActivities.data.slice(0, 7)        
         
         const activityPromises = recentActivitiesList.map(async (activity) => {
