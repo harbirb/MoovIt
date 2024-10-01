@@ -12,5 +12,10 @@ Things I learned:
 - **Webhooks**: How to implement and process webhooks to react to events from third-party services.
 - **Routing and Serving Static Files**: Setting up Express to serve static files and managing routing for both API endpoints and frontend assets.
 - **Session-Based Feature Toggles**: Using session data to toggle features like auto-uploading songs to Strava, allowing for a more personalized user experience.
+  
+![image](https://github.com/user-attachments/assets/e362e549-75a0-4ee7-a069-2cf594877da8)
+_
+![image](https://github.com/user-attachments/assets/69c26f1b-d9ff-4aa7-97ec-b6ca99ccd36f)
+
 
 
