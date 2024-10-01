@@ -1,7 +1,7 @@
 # MoovIt is an app to find the songs that you listened to during your workouts
-## Try it here: http://moovit.onrender.com
+## Try it here: http://moovit.onrender.com <sup><sub>(may take up to 1 minute to load)</sub></sup>
 
-MoovIt works by oonnecting to your Strava and Spotify accounts to find when your recently played songs overlapped with your workouts.
+MoovIt works by connecting to your Strava and Spotify accounts to find when your recently played songs overlapped with your workouts.
 
 Things I learned: 
 - **Integration of Third-Party APIs**: How to effectively use OAuth for authenticating with third-party services, and securely managing the exchange of tokens.
