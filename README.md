@@ -18,7 +18,7 @@ Things I learned:
   <tr>
     <td><img src="https://github.com/user-attachments/assets/e362e549-75a0-4ee7-a069-2cf594877da8" alt="Image 1" width="600" /></td>
     <td><img src="https://github.com/user-attachments/assets/69c26f1b-d9ff-4aa7-97ec-b6ca99ccd36f" alt="Image 2" width="600" /></td>
-    <td><img src="https://github.com/user-attachments/assets/1b086469-5452-440c-908a-e9ff492bd462" alt="Image 3" width="600" /></td>
+    <td><img src="https://github.com/user-attachments/assets/2534583e-7a5b-4238-a104-2ab3965f25bd" alt="Image 3" width="600" /></td>
   </tr>
 </table>
 
