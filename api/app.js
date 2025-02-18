@@ -365,11 +365,9 @@ app.post("/api/user/toggleIsSubscribed", async (req, res) => {
       newSubscriptionStatus
     );
     if (result.nModified === 0) {
-      return res
-        .status(404)
-        .json({
-          message: "User not found or no change in subscription status",
-        });
+      return res.status(404).json({
+        message: "User not found or no change in subscription status",
+      });
     }
     res.status(200).send({ message: "updated subscription successfully" });
   } catch (error) {
@@ -542,7 +540,7 @@ async function handleWebhookEvent(
     object_type == "activity" &&
     aspect_type == "update" &&
     "title" in updates &&
-    updates.title == "🐮"
+    (updates.title == "🐮" || updates.title == "Moo" || updates.title == "moo")
   ) {
     postToActivity(owner_id, object_id);
   }
@@ -582,12 +580,12 @@ async function updateStravaActivity(activity_id, access_token, description) {
 
 async function postToActivity(athlete_id, activity_id) {
   try {
-    const soundtrack = await getActivitySoundtrack(athlete_id, activity_id);
-    if (soundtrack.length == 0) return;
-
-    const activityDescription = formatActivityDescription(soundtrack);
     const access_token = await getStravaToken(athlete_id);
-
+    const soundtrack = await getActivitySoundtrack(athlete_id, activity_id);
+    let activityDescription = "";
+    if (soundtrack.length != 0) {
+      activityDescription = formatActivityDescription(soundtrack);
+    }
     await updateStravaActivity(activity_id, access_token, activityDescription);
     console.log(`Posted songs to ${athlete_id}'s activity!`);
   } catch (error) {
