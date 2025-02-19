@@ -257,7 +257,7 @@ async function exchangeSpotifyAuthCodeForTokens(authCode) {
       },
     }
   );
-  console.log(await response.text());
+  console.log(response);
   return response.data;
 }
 
