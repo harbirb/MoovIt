@@ -284,11 +284,16 @@ app.get("/auth/spotify/callback", async (req, res) => {
   if (error) {
     return res.redirect("/");
   }
+  if (!req.session.athlete_id) {
+    return res.status(404).send("User session expired or not found");
+  }
   try {
-    const { access_token, refresh_token, expires_in } =
-      await exchangeSpotifyAuthCodeForTokens(AUTH_CODE);
+    const tokenResponse = await exchangeSpotifyAuthCodeForTokens(AUTH_CODE);
+    if (!tokenResponse) throw new Error("Failed to get tokens");
+    const { access_token, refresh_token, expires_in } = tokenResponse;
     const expires_at = Math.floor(Date.now() / 1000) + expires_in;
     const userProfile = await fetchUserSpotifyProfile(access_token);
+    if (!userProfile.email) throw new Error("Failed to fetch user profile");
     await updateUserWithSpotifyData(req.session.athlete_id, {
       spotifyAccessToken: access_token,
       spotifyRefreshToken: refresh_token,
@@ -298,7 +303,7 @@ app.get("/auth/spotify/callback", async (req, res) => {
     req.session.spotifyLinked = true;
     res.redirect("/");
   } catch (error) {
-    console.error("Error in Spotify Auth Step", error);
+    console.error("Error in Spotify Auth Step:", error);
     res.status(500).send("Authentication failed");
   }
 });
