@@ -280,6 +280,7 @@ async function updateUserWithSpotifyData(athlete_id, data) {
 }
 
 app.get("/auth/spotify/callback", async (req, res) => {
+  console.log(req.query);
   const { code: AUTH_CODE, error } = req.query;
   if (error) {
     return res.redirect("/");
