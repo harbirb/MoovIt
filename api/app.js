@@ -293,7 +293,7 @@ app.get("/auth/spotify/callback", async (req, res) => {
     const { access_token, refresh_token, expires_in } = tokenResponse;
     const expires_at = Math.floor(Date.now() / 1000) + expires_in;
     const userProfile = await fetchUserSpotifyProfile(access_token);
-    if (!userProfile.email) throw new Error("Failed to fetch user profile");
+    if (!userProfile?.email) throw new Error("Failed to fetch user profile");
     await updateUserWithSpotifyData(req.session.athlete_id, {
       spotifyAccessToken: access_token,
       spotifyRefreshToken: refresh_token,
