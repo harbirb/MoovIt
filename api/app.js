@@ -257,6 +257,7 @@ async function exchangeSpotifyAuthCodeForTokens(authCode) {
       },
     }
   );
+  console.log(await response.text());
   return response.data;
 }
 
@@ -289,6 +290,7 @@ app.get("/auth/spotify/callback", async (req, res) => {
     return res.status(404).send("User session expired or not found");
   }
   try {
+    console.log("Auth code", AUTH_CODE);
     const tokenResponse = await exchangeSpotifyAuthCodeForTokens(AUTH_CODE);
     if (!tokenResponse) throw new Error("Failed to get tokens");
     const { access_token, refresh_token, expires_in } = tokenResponse;
