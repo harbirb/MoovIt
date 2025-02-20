@@ -223,7 +223,7 @@ app.get("/auth/strava/callback", async (req, res) => {
 });
 
 app.get("/auth/spotify", (req, res) => {
-  const scope = "user-read-private user-read-email user-read-recently-played";
+  const scope = "user-read-recently-played playlist-modify-private";
   const state = "klhgKJFhjdyFBkhfJGHL";
 
   res.redirect(
