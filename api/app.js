@@ -324,14 +324,15 @@ app.get("/api/recent-activities", async (req, res) => {
       {
         params: {
           before: Date.now() / 1000,
-          after: (Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000,
+          after: (Date.now() - 365 * 24 * 60 * 60 * 1000) / 1000,
         },
         headers: {
           Authorization: "Bearer " + strava_token,
         },
       }
     );
-    console.log("recent activities", recentActivities?.data);
+    if (recentActivities.data.length === 0)
+      console.log("No recent activities for this user");
     const recentActivitiesList = recentActivities.data.slice(0, 7);
 
     const activityPromises = recentActivitiesList.map(async (activity) => {
