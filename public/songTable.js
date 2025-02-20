@@ -24,6 +24,16 @@ function populateTable(data) {
     activityLink.href = `https://www.strava.com/activities/${item.activity_id}`;
     activityLink.textContent = "View on Strava";
     activityLink.className = "activityLink";
+    const createPlaylistForm = document.createElement("form");
+    createPlaylistForm.setAttribute("method", "POST");
+    createPlaylistForm.setAttribute(
+      "action",
+      `/api/create-activity-playlist/${item.activity_id}`
+    );
+    const createPlayListButton = document.createElement("button");
+    createPlayListButton.type = "submit";
+    createPlayListButton.textContent = "Create Playlist on Spotify";
+    createPlaylistForm.appendChild(createPlayListButton);
     const songs = document.createElement("div");
     songs.className = "songList";
     if (item.soundtrack.length > 0) {
@@ -46,6 +56,7 @@ function populateTable(data) {
     row.appendChild(title);
     row.appendChild(date);
     row.appendChild(activityLink);
+    row.appendChild(createPlaylistForm);
     row.appendChild(songs);
     tableBody.appendChild(row);
   });
