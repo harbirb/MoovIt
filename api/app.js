@@ -317,6 +317,7 @@ app.get("/api/recent-activities", async (req, res) => {
   // get activities in the last week
   const athlete_id = req.session.athlete_id;
   const strava_token = await getStravaToken(athlete_id);
+  console.log("got token:", strava_token);
   try {
     const recentActivities = await axios.get(
       "https://www.strava.com/api/v3/athlete/activities",
@@ -330,6 +331,7 @@ app.get("/api/recent-activities", async (req, res) => {
         },
       }
     );
+    console.log("recent activities", recentActivities?.data);
     const recentActivitiesList = recentActivities.data.slice(0, 7);
 
     const activityPromises = recentActivitiesList.map(async (activity) => {
