@@ -57,13 +57,13 @@ function populateTable(data) {
   });
 }
 
-async function createPlaylist(playlistId) {
+async function createPlaylist(activity_id) {
   const response = await fetch("/api/create-activity-playlist", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ playlistId: playlistId }),
+    body: JSON.stringify({ activity_id }),
   });
   if (!response.ok) {
     console.error("ERROR:", response.statusText);
