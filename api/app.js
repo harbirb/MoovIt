@@ -367,7 +367,7 @@ async function updateUserSubscriptionStatus(athlete_id, newStatus) {
   );
 }
 
-app.post("api/create-activity-playlist", async (req, res) => {
+app.post("/api/create-activity-playlist", async (req, res) => {
   const { activity_id } = req.body;
   // await createPlaylist(activity_id);
   res.send("hello world");
