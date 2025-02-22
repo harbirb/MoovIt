@@ -24,16 +24,11 @@ function populateTable(data) {
     activityLink.href = `https://www.strava.com/activities/${item.activity_id}`;
     activityLink.textContent = "View on Strava";
     activityLink.className = "activityLink";
-    const createPlaylistForm = document.createElement("form");
-    createPlaylistForm.setAttribute("method", "POST");
-    createPlaylistForm.setAttribute(
-      "action",
-      `/api/create-activity-playlist/${item.activity_id}`
-    );
     const createPlayListButton = document.createElement("button");
-    createPlayListButton.type = "submit";
+    createPlayListButton.onclick = () => {
+      createPlaylist(item.playlist_id, athlete_id);
+    };
     createPlayListButton.textContent = "Create Playlist on Spotify";
-    createPlaylistForm.appendChild(createPlayListButton);
     const songs = document.createElement("div");
     songs.className = "songList";
     if (item.soundtrack.length > 0) {
@@ -56,44 +51,29 @@ function populateTable(data) {
     row.appendChild(title);
     row.appendChild(date);
     row.appendChild(activityLink);
-    row.appendChild(createPlaylistForm);
+    row.appendChild(createPlayListButton);
     row.appendChild(songs);
     tableBody.appendChild(row);
   });
 }
 
-const toggleButton = document.getElementById("toggleButton");
-const statusText = document.getElementById("status");
-
-// // Update the status text based on the toggle state
-// toggleButton.addEventListener('change', async () => {
-//     if (toggleButton.checked) {
-//         statusText.textContent = 'On'
-//     } else {
-//         statusText.textContent = 'Off';
-//     }
-//     try {
-//         await fetch('/api/user/toggleIsSubscribed', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json'
-//             },
-//             body: JSON.stringify({newSubscriptionStatus: toggleButton.checked})
-//         })
-//     } catch (error) {
-//         console.log(error)
-//     }
-// });
+async function createPlaylist(playlistId) {
+  const response = await fetch("/api/create-activity-playlist", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ playlistId: playlistId }),
+  });
+  if (!response.ok) {
+    console.error("ERROR:", response.statusText);
+    return;
+  }
+  const data = await response.json();
+  console.log(data);
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // try {
-  //     const response = await fetch('/api/user/isSubscribed')
-  //     toggleButton.checked = await response.json()
-  //     statusText.textContent = toggleButton.checked ? 'On' : 'Off'
-  // } catch (error) {
-  //     console.error('Error fetching user preferences:', error)
-  // }
-
   document.getElementById("loading").style.display = "block";
   try {
     const response = await fetch("/api/recent-activities");
