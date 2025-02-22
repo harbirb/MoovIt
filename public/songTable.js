@@ -26,7 +26,7 @@ function populateTable(data) {
     activityLink.className = "activityLink";
     const createPlayListButton = document.createElement("button");
     createPlayListButton.onclick = () => {
-      createPlaylist(item.playlist_id, athlete_id);
+      createPlaylist(item.playlist_id);
     };
     createPlayListButton.textContent = "Create Playlist on Spotify";
     const songs = document.createElement("div");
