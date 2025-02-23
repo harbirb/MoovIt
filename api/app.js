@@ -402,9 +402,6 @@ async function createActivityPlaylist(activity_id, athlete_id) {
     }
 
     const { name, distance, start_date_local } = activity;
-    console.log(
-      `Activity: ${name}, Distance: ${distance}, Date: ${start_date_local}`
-    );
     const spotify_token = await getSpotifyToken(athlete_id);
     const user = await fetchUserSpotifyProfile(spotify_token);
     const spotify_user_id = user.id;
@@ -416,11 +413,22 @@ async function createActivityPlaylist(activity_id, athlete_id) {
       distance,
       start_date_local
     );
+    if (!playlist) {
+      console.error("Failed to create playlist.");
+      return;
+    }
 
     const track_uris = soundtrack.map((track) => track.uri);
 
     if (playlist.id) {
-      await populateSpotifyPlaylist(playlist.id, track_uris, spotify_token);
+      const populateResult = await populateSpotifyPlaylist(
+        playlist.id,
+        track_uris,
+        spotify_token
+      );
+      if (populateResult) {
+        return playlist.external_urls.spotify;
+      }
     }
   } catch (error) {
     console.error("Error in createActivityPlaylist:", error);
@@ -495,11 +503,13 @@ app.post("/api/create-activity-playlist", async (req, res) => {
   const { activity_id } = req.body;
   const athlete_id = req.session.athlete_id;
   console.log(athlete_id, activity_id);
-  const response = await createActivityPlaylist(activity_id, athlete_id);
-  if (!response) {
+  const playlistUrl = await createActivityPlaylist(activity_id, athlete_id);
+  if (!playlistUrl) {
     return res.status(500).send("Failed to create playlist");
   }
-  res.status(200).send({ message: "Playlist created successfully" });
+  res
+    .status(200)
+    .send({ message: "Playlist created successfully", playlistUrl });
 });
 
 app.post("/api/user/toggleIsSubscribed", async (req, res) => {

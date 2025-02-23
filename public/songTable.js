@@ -25,9 +25,14 @@ function populateTable(data) {
     activityLink.textContent = "View on Strava";
     activityLink.className = "activityLink";
     const createPlayListButton = document.createElement("button");
-    createPlayListButton.onclick = () => {
-      createPlaylist(item.activity_id);
-    };
+    createPlayListButton.className = "createPlaylistButton";
+    createPlayListButton.addEventListener(
+      "click",
+      () => createPlaylistOnClick(item.activity_id, createPlayListButton),
+      {
+        once: true,
+      }
+    );
     createPlayListButton.textContent = "Create Playlist on Spotify";
     const songs = document.createElement("div");
     songs.className = "songList";
@@ -57,7 +62,7 @@ function populateTable(data) {
   });
 }
 
-async function createPlaylist(activity_id) {
+async function createPlaylistOnClick(activity_id, button) {
   const response = await fetch("/api/create-activity-playlist", {
     method: "POST",
     headers: {
@@ -70,6 +75,12 @@ async function createPlaylist(activity_id) {
     return;
   }
   const data = await response.json();
+  alert(data.message);
+  button.textContent = "View Playlist on Spotify";
+  button.href = data.playlistUrl;
+  button.addEventListener("click", function () {
+    window.open(button.href, "_blank");
+  });
   console.log(data);
 }
 
