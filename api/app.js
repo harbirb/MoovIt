@@ -362,28 +362,28 @@ async function updateUserSubscriptionStatus(athlete_id, newStatus) {
   );
 }
 
-// async function fetchActivityFromStrava(activity_id, token) {
-//   try {
-//     // const response = await fetch(
-//     //   `https://www.strava.com/api/v3/activities/${activity_id}`,
-//     //   {
-//     //     method: "GET",
-//     //     headers: { Authorization: `Bearer ${token}` },
-//     //   }
-//     // );
+async function fetchActivityFromStrava(activity_id, token) {
+  try {
+    const response = await fetch(
+      `https://www.strava.com/api/v3/activities/${activity_id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-//     // if (!response.ok) {
-//     //   const errorText = await response.text();
-//     //   console.error("Invalid response from Strava API:", errorText);
-//     //   return null;
-//     // }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Invalid response from Strava API:", errorText);
+      return null;
+    }
 
-//     return await response.json();
-//   } catch (error) {
-//     console.error("Error fetching activity from Strava API:", error);
-//     return null;
-//   }
-// }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching activity from Strava API:", error);
+    return null;
+  }
+}
 
 async function createActivityPlaylist(activity_id, athlete_id) {
   try {
@@ -394,15 +394,17 @@ async function createActivityPlaylist(activity_id, athlete_id) {
     }
 
     const strava_token = await getStravaToken(athlete_id);
-    // const activity = await fetchActivityFromStrava(activity_id, strava_token);
+    const activity = await fetchActivityFromStrava(activity_id, strava_token);
 
-    // if (!activity) {
-    //   console.error("Failed to fetch activity data.");
-    //   // return;
-    // }
+    if (!activity) {
+      console.error("Failed to fetch activity data.");
+      return;
+    }
 
-    // const { name, distance, start_date_local } = activity;
-    // console.log(`Activity: ${name}, Distance: ${distance}, Date: ${start_date_local}`);
+    const { name, distance, start_date_local } = activity;
+    console.log(
+      `Activity: ${name}, Distance: ${distance}, Date: ${start_date_local}`
+    );
     const spotify_token = await getSpotifyToken(athlete_id);
     const user = await fetchUserSpotifyProfile(spotify_token);
     const spotify_user_id = user.id;
@@ -410,9 +412,9 @@ async function createActivityPlaylist(activity_id, athlete_id) {
     const playlist = await createEmptySpotifyPlaylist(
       spotify_user_id,
       spotify_token,
-      "hi",
-      "234",
-      "231234"
+      name,
+      distance,
+      start_date_local
     );
 
     const track_uris = soundtrack.map((track) => track.uri);
