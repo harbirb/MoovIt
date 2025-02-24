@@ -63,6 +63,11 @@ function populateTable(data) {
 }
 
 async function createPlaylistOnClick(activity_id, button) {
+  const spinner = document.createElement("span");
+  spinner.classList.add("spinner"); // Add a class for styling
+  button.textContent = ""; // Clear the button text
+  button.appendChild(spinner); // Append the spinner
+
   const response = await fetch("/api/create-activity-playlist", {
     method: "POST",
     headers: {
@@ -74,13 +79,16 @@ async function createPlaylistOnClick(activity_id, button) {
     console.error("ERROR:", response.statusText);
     return;
   }
+  button.removeChild(spinner);
   const data = await response.json();
-  alert(data.message);
-  button.textContent = "View Playlist on Spotify";
+  // alert(data.message);
   button.href = data.playlistUrl;
   button.addEventListener("click", function () {
     window.open(button.href, "_blank");
   });
+  button.style.color = "#1ed760";
+  button.style.fontWeight = "bolder";
+  button.textContent = "Open Playlist on Spotify";
   console.log(data);
 }
 

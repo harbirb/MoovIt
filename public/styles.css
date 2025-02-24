@@ -127,10 +127,10 @@ body {
   font-size: 30px;
   margin: 50px auto;
   border: 10px;
-  animation: spin 2s linear infinite;
+  animation: spincow 2s linear infinite;
 }
 
-@keyframes spin {
+@keyframes spincow {
   0% {
     transform: rotate(0deg) scale(1);
   }
@@ -199,4 +199,24 @@ body {
 
 .activityTitle {
   font-size: 20pt;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #09f;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block; /* Makes it sit nicely inside the button */
+  margin-right: 5px; /* Add a little space between the spinner and text */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
