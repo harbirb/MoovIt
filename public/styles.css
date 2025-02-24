@@ -1,194 +1,222 @@
 /* Toggle switch container */
 .toggle-switch {
-    position: relative;
-    display: inline-block;
-    min-width: 60px;
-    height: 34px;
-    transform: scale(0.7);
+  position: relative;
+  display: inline-block;
+  min-width: 60px;
+  height: 34px;
+  transform: scale(0.7);
 }
 
 .container {
-    display: flex;
-    justify-content: center;
-    text-align: center;
-    align-items: center; 
-    gap: 10px;
-    align-content: center;
-    
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+  gap: 10px;
+  align-content: center;
 }
 
 /* Hide the default checkbox */
 .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 /* The slider */
 .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #bbb;
-    transition: .4s;
-    border-radius: 34px;
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #bbb;
+  transition: 0.4s;
+  border-radius: 34px;
 }
 
 /* The slider: before */
 .slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
 }
 
 /* Toggle on state */
 input:checked + .slider {
-    background-color: #2196F3;
+  background-color: #2196f3;
 }
 
 /* Move the slider when toggled */
 input:checked + .slider:before {
-    transform: translateX(26px);
+  transform: translateX(26px);
 }
 
 /* Apply flexbox to the wrapper */
 .wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh; /* Ensure it covers the full viewport height */
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure it covers the full viewport height */
+  overflow: hidden;
 }
 
 main {
-    flex: 1; /* Main content takes the remaining space */
-    text-align: center;
+  flex: 1; /* Main content takes the remaining space */
+  text-align: center;
 }
 
 footer {
-    flex-shrink: 0; /* Footer stays at the bottom */
-    text-align: center; /* Center text in the footer */
-    align-items: center;
-    justify-content: center;
-    font-size: 10pt;
+  flex-shrink: 0; /* Footer stays at the bottom */
+  text-align: center; /* Center text in the footer */
+  align-items: center;
+  justify-content: center;
+  font-size: 10pt;
 }
 
 button:hover {
-    transform: scale(1.08);
+  transform: scale(1.08);
 }
 
 .logo {
-    display: flex;
-    margin: auto;
+  display: flex;
+  margin: auto;
 }
-.logo img{
-    max-width: 120px;
-    margin: auto;
+.logo img {
+  max-width: 120px;
+  margin: auto;
 }
 
 body {
-    margin: auto;
-    padding: auto;
-    text-align: center;
+  margin: auto;
+  padding: auto;
+  text-align: center;
 }
 
 .image {
-    margin: auto;
-    margin-bottom: 5%;
-    max-width: 350px;
+  margin: auto;
+  margin-bottom: 5%;
+  max-width: 350px;
 }
 
 .openSpotifyButton {
-    display: flex;
-    margin: auto;
-    flex-direction: row;
-    padding: 10px 30px;
-    font-size: 16px;
-    font-weight: 600;
-    gap: 10px;
-    border-radius: 50px;
-    align-items: center;
-    letter-spacing: 2px;
+  display: flex;
+  margin: auto;
+  flex-direction: row;
+  padding: 10px 30px;
+  font-size: 16px;
+  font-weight: 600;
+  gap: 10px;
+  border-radius: 50px;
+  align-items: center;
+  letter-spacing: 2px;
 }
 
-
 .icon {
-    max-width: 30px;
+  max-width: 30px;
 }
 
 .loading {
-    display: none;
-    font-size: 30px;
-    margin: 50px auto;
-    border: 10px;
-    animation: spin 2s linear infinite;
+  display: none;
+  font-size: 30px;
+  margin: 50px auto;
+  border: 10px;
+  animation: spincow 2s linear infinite;
+}
+
+@keyframes spincow {
+  0% {
+    transform: rotate(0deg) scale(1);
   }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(360deg) scale(1.5); }
-    100% { transform: rotate(720deg) scale(1); }
+  50% {
+    transform: rotate(360deg) scale(1.5);
   }
+  100% {
+    transform: rotate(720deg) scale(1);
+  }
+}
 
 .songLink {
-    display: inline-block;
-    color: white;
-    margin-right: auto;
-    max-width: 100%;
+  display: inline-block;
+  color: white;
+  margin-right: auto;
+  max-width: 100%;
 }
 
 .songName {
-    font-size: 12pt;
-    margin: -3px auto;
-    margin-top: 0px;    
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
+  font-size: 12pt;
+  margin: -3px auto;
+  margin-top: 0px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .songArtists {
-    font-size: 10pt;
-    margin: -3px auto;
-    color: #ccc;
+  font-size: 10pt;
+  margin: -3px auto;
+  color: #ccc;
 }
 
 .songList {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .activityContainer {
-    display: flex;
-    flex-direction: column;
-    justify-content: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
 }
 
 .activityTitle {
-    margin: 0px;
-    padding: 0px;
+  margin: 0px;
+  padding: 0px;
+}
+
+.createPlaylistButton {
+  margin-right: auto;
 }
 
 .activityDate {
-    font-size: 8pt;
-    margin: -2px 0;
-    color: #bbb;
+  font-size: 8pt;
+  margin: -2px 0;
+  color: #bbb;
 }
 
 .activityLink {
-    color: #FC4C02;
-    font-size: 11pt;
-    margin-right: auto;
+  color: #fc4c02;
+  font-size: 11pt;
+  margin-right: auto;
 }
 
 .activityTitle {
-    font-size: 20pt;
+  font-size: 20pt;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #09f;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block; /* Makes it sit nicely inside the button */
+  margin-right: 5px; /* Add a little space between the spinner and text */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
