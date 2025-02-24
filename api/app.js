@@ -49,7 +49,7 @@ app.use("/api", authenticate);
 app.use(express.static(path.resolve(__dirname, "../public")));
 app.use(express.json());
 
-app.listen(PORT, () => console.log(`Server is running on ${BASE_URL}:${PORT}`));
+app.listen(PORT, () => console.log(`Server is running on ${BASE_URL}`));
 
 // Authentication Middleware
 function authenticate(req, res, next) {
@@ -157,7 +157,7 @@ app.get("/api/testpage/:activity", async (req, res) => {
 });
 
 app.get("/auth/strava", (req, res) => {
-  const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}:${PORT}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all,activity:write`;
+  const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all,activity:write`;
   res.redirect(stravaAuthUrl);
 });
 
@@ -230,7 +230,7 @@ app.get("/auth/spotify", (req, res) => {
         client_id: SPOTIFY_CLIENT_ID,
         scope,
         state,
-        redirect_uri: `${BASE_URL}:${PORT}/auth/spotify/callback`,
+        redirect_uri: `${BASE_URL}/auth/spotify/callback`,
         show_dialog: true,
       })
   );
@@ -241,7 +241,7 @@ async function exchangeSpotifyAuthCodeForTokens(authCode) {
     "https://accounts.spotify.com/api/token",
     {
       code: authCode,
-      redirect_uri: `${BASE_URL}:${PORT}/auth/spotify/callback`,
+      redirect_uri: `${BASE_URL}/auth/spotify/callback`,
       grant_type: "authorization_code",
     },
     {
