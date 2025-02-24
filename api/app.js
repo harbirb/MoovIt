@@ -49,7 +49,7 @@ app.use("/api", authenticate);
 app.use(express.static(path.resolve(__dirname, "../public")));
 app.use(express.json());
 
-app.listen(PORT, () => console.log(`Server is running on ${BASE_URL}:${PORT}`));
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
 
 // Authentication Middleware
 function authenticate(req, res, next) {
@@ -76,6 +76,7 @@ const userSchema = new mongoose.Schema({
   spotifyAccessToken: String,
   spotifyRefreshToken: String,
   spotifyTokenExpiresAt: Date,
+  spotifyEmail: String,
 });
 const User = mongoose.model("User", userSchema);
 
@@ -87,7 +88,6 @@ const activitySoundtrackSchema = new mongoose.Schema({
       track_name: String,
       track_artists: [String],
       link: String,
-      uri: String,
     },
   ],
 });
@@ -157,7 +157,7 @@ app.get("/api/testpage/:activity", async (req, res) => {
 });
 
 app.get("/auth/strava", (req, res) => {
-  const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}:${PORT}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all,activity:write`;
+  const stravaAuthUrl = `http://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${BASE_URL}/auth/strava/callback&approval_prompt=auto&scope=read,activity:read_all,activity:write`;
   res.redirect(stravaAuthUrl);
 });
 
@@ -194,6 +194,9 @@ async function updateOrCreateUser(session, athlete_id, tokenData) {
     user.stravaAccessToken = access_token;
     user.stravaRefreshToken = refresh_token;
     user.stravaTokenExpiresAt = expires_at;
+    if (user.spotifyEmail) {
+      session.spotifyLinked = true;
+    }
     await user.save();
     console.log("Updated existing user");
   }
@@ -230,8 +233,7 @@ app.get("/auth/spotify", (req, res) => {
         client_id: SPOTIFY_CLIENT_ID,
         scope,
         state,
-        redirect_uri: `${BASE_URL}:${PORT}/auth/spotify/callback`,
-        show_dialog: true,
+        redirect_uri: `${BASE_URL}/auth/spotify/callback`,
       })
   );
 });
@@ -241,7 +243,7 @@ async function exchangeSpotifyAuthCodeForTokens(authCode) {
     "https://accounts.spotify.com/api/token",
     {
       code: authCode,
-      redirect_uri: `${BASE_URL}:${PORT}/auth/spotify/callback`,
+      redirect_uri: `${BASE_URL}/auth/spotify/callback`,
       grant_type: "authorization_code",
     },
     {
@@ -293,10 +295,13 @@ app.get("/auth/spotify/callback", async (req, res) => {
     if (!tokenResponse) throw new Error("Failed to get tokens");
     const { access_token, refresh_token, expires_in } = tokenResponse;
     const expires_at = Math.floor(Date.now() / 1000) + expires_in;
+    const userProfile = await fetchUserSpotifyProfile(access_token);
+    if (!userProfile?.email) throw new Error("Failed to fetch user profile");
     await updateUserWithSpotifyData(req.session.athlete_id, {
       spotifyAccessToken: access_token,
       spotifyRefreshToken: refresh_token,
       spotifyTokenExpiresAt: expires_at,
+      spotifyEmail: userProfile.email,
     });
     req.session.spotifyLinked = true;
     res.redirect("/");
@@ -362,154 +367,10 @@ async function updateUserSubscriptionStatus(athlete_id, newStatus) {
   );
 }
 
-async function fetchActivityFromStrava(activity_id, token) {
-  try {
-    const response = await fetch(
-      `https://www.strava.com/api/v3/activities/${activity_id}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Invalid response from Strava API:", errorText);
-      return null;
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching activity from Strava API:", error);
-    return null;
-  }
-}
-
-async function createActivityPlaylist(activity_id, athlete_id) {
-  try {
-    const soundtrack = await getActivitySoundtrack(athlete_id, activity_id);
-    if (soundtrack.length === 0) {
-      console.log("No soundtrack found for this activity.");
-      return;
-    }
-
-    const strava_token = await getStravaToken(athlete_id);
-    const activity = await fetchActivityFromStrava(activity_id, strava_token);
-
-    if (!activity) {
-      console.error("Failed to fetch activity data.");
-      return;
-    }
-
-    const { name, distance, start_date_local } = activity;
-    const spotify_token = await getSpotifyToken(athlete_id);
-    const user = await fetchUserSpotifyProfile(spotify_token);
-    const spotify_user_id = user.id;
-
-    const playlist = await createEmptySpotifyPlaylist(
-      spotify_user_id,
-      spotify_token,
-      name,
-      distance,
-      start_date_local
-    );
-    if (!playlist) {
-      console.error("Failed to create playlist.");
-      return;
-    }
-
-    const track_uris = soundtrack.map((track) => track.uri);
-
-    if (playlist.id) {
-      const populateResult = await populateSpotifyPlaylist(
-        playlist.id,
-        track_uris,
-        spotify_token
-      );
-      if (populateResult) {
-        return playlist.external_urls.spotify;
-      }
-    }
-  } catch (error) {
-    console.error("Error in createActivityPlaylist:", error);
-  }
-}
-
-async function createEmptySpotifyPlaylist(
-  spotify_user_id,
-  spotify_token,
-  name,
-  distance,
-  start_date_local
-) {
-  try {
-    const response = await fetch(
-      `https://api.spotify.com/v1/users/${spotify_user_id}/playlists`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + spotify_token,
-        },
-        body: JSON.stringify({
-          name,
-          public: false,
-          description: `${distance} metres on ${start_date_local}`,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Invalid response from Spotify API:", errorText);
-    }
-    const playlist = await response.json();
-    return playlist;
-  } catch (error) {
-    console.error("Error in createSpotifyPlaylist:", error);
-  }
-}
-
-async function populateSpotifyPlaylist(playlist_id, uris, spotify_token) {
-  console.log(typeof uris);
-  console.log(uris);
-  try {
-    const response = await fetch(
-      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + spotify_token,
-        },
-        body: JSON.stringify({
-          position: 0,
-          uris: uris,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Invalid response from Spotify API:", errorText);
-    }
-    return response.json();
-  } catch (error) {
-    console.error("Error in populateSpotifyPlaylist:", error);
-  }
-}
-
 app.post("/api/create-activity-playlist", async (req, res) => {
   const { activity_id } = req.body;
-  const athlete_id = req.session.athlete_id;
-  console.log(athlete_id, activity_id);
-  const playlistUrl = await createActivityPlaylist(activity_id, athlete_id);
-  if (!playlistUrl) {
-    return res.status(500).send("Failed to create playlist");
-  }
-  res
-    .status(200)
-    .send({ message: "Playlist created successfully", playlistUrl });
+  // await createPlaylist(activity_id);
+  res.send("hello world");
 });
 
 app.post("/api/user/toggleIsSubscribed", async (req, res) => {
@@ -851,7 +712,6 @@ async function generateActivitySoundtrack(athlete_id, activity_id) {
         track_name: obj.track.name,
         track_artists: obj.track.artists.map((artist) => artist.name),
         link: obj.track.external_urls.spotify,
-        uri: obj.track.uri,
       };
     });
     soundtrack.reverse();
