@@ -49,7 +49,8 @@ app.use("/api", authenticate);
 app.use(express.static(path.resolve(__dirname, "../public")));
 app.use(express.json());
 
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server is running on ${BASE_URL}`));
+
 
 // Authentication Middleware
 function authenticate(req, res, next) {
@@ -234,6 +235,7 @@ app.get("/auth/spotify", (req, res) => {
         scope,
         state,
         redirect_uri: `${BASE_URL}/auth/spotify/callback`,
+        show_dialog: true,
       })
   );
 });
