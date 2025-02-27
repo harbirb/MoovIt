@@ -220,7 +220,8 @@ app.get("/auth/strava/callback", async (req, res) => {
 });
 
 app.get("/auth/spotify", (req, res) => {
-  const scope = "user-read-recently-played playlist-modify-private";
+  const scope =
+    "user-read-recently-played playlist-modify-private ugc-image-upload";
   const state = "klhgKJFhjdyFBkhfJGHL";
 
   res.redirect(
@@ -385,6 +386,18 @@ async function fetchActivityFromStrava(activity_id, token) {
   }
 }
 
+async function imageToBase64(url) {
+  try {
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString("base64");
+    return base64Image;
+  } catch (error) {
+    console.error("Error converting image to base64:", error);
+    return null;
+  }
+}
+
 async function createActivityPlaylist(activity_id, athlete_id) {
   try {
     const soundtrack = await getActivitySoundtrack(athlete_id, activity_id);
@@ -401,7 +414,16 @@ async function createActivityPlaylist(activity_id, athlete_id) {
       return;
     }
 
-    const { name, distance, start_date_local } = activity;
+    const {
+      name,
+      distance,
+      start_date_local,
+      photos: { primary },
+    } = activity;
+    if (primary != null && primary.urls != null) {
+      const firstImageUrl = Object.values(primary.urls)[0];
+      var base64Image = await imageToBase64(firstImageUrl);
+    }
     const spotify_token = await getSpotifyToken(athlete_id);
     const user = await fetchUserSpotifyProfile(spotify_token);
     const spotify_user_id = user.id;
@@ -421,6 +443,13 @@ async function createActivityPlaylist(activity_id, athlete_id) {
     const track_uris = soundtrack.map((track) => track.uri);
 
     if (playlist.id) {
+      if (base64Image) {
+        await uploadImageToSpotifyPlaylist(
+          playlist.id,
+          base64Image,
+          spotify_token
+        );
+      }
       const populateResult = await populateSpotifyPlaylist(
         playlist.id,
         track_uris,
@@ -432,6 +461,34 @@ async function createActivityPlaylist(activity_id, athlete_id) {
     }
   } catch (error) {
     console.error("Error in createActivityPlaylist:", error);
+  }
+}
+
+async function uploadImageToSpotifyPlaylist(
+  playlist_id,
+  base64Image,
+  spotify_token
+) {
+  try {
+    const response = await fetch(
+      `https://api.spotify.com/v1/playlists/${playlist_id}/images`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "image/jpeg",
+          Authorization: "Bearer " + spotify_token,
+        },
+        body: base64Image,
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Invalid response from Spotify API:", errorText);
+    }
+    console.log("Image uploaded to playlist successfully!");
+  } catch (error) {
+    console.error("Error in uploadImageToSpotifyPlaylist:", error);
   }
 }
 
