@@ -70,6 +70,7 @@ input:checked + .slider:before {
 main {
   flex: 1; /* Main content takes the remaining space */
   text-align: center;
+  padding: 30px;
 }
 
 footer {

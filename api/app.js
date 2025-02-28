@@ -562,7 +562,7 @@ app.post("/api/create-activity-playlist", async (req, res) => {
   console.log(athlete_id, activity_id);
   const playlistUrl = await createActivityPlaylist(activity_id, athlete_id);
   if (!playlistUrl) {
-    return res.status(500).send("Failed to create playlist");
+    return res.status(500).send("No playlist created");
   }
   res
     .status(200)

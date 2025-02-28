@@ -24,16 +24,27 @@ function populateTable(data) {
     activityLink.href = `https://www.strava.com/activities/${item.activity_id}`;
     activityLink.textContent = "View on Strava";
     activityLink.className = "activityLink";
-    const createPlayListButton = document.createElement("button");
-    createPlayListButton.className = "createPlaylistButton";
-    createPlayListButton.addEventListener(
-      "click",
-      () => createPlaylistOnClick(item.activity_id, createPlayListButton),
-      {
-        once: true,
-      }
-    );
-    createPlayListButton.textContent = "Create Playlist on Spotify";
+
+    const createPlaylistDiv = document.createElement("div");
+    if (item.soundtrack.length > 0) {
+      const createPlayListButton = document.createElement("button");
+      createPlayListButton.className = "createPlaylistButton";
+      createPlayListButton.addEventListener(
+        "click",
+        () => createPlaylistOnClick(item.activity_id, createPlayListButton),
+        {
+          once: true,
+        }
+      );
+      createPlayListButton.style.fontWeight = "bold";
+      createPlayListButton.style.border = "2px solid #1ed760";
+      createPlayListButton.style.borderRadius = "20px";
+      createPlayListButton.style.backgroundColor = "#191414";
+      createPlayListButton.style.color = "#1ed760";
+      createPlayListButton.textContent = "Create Spotify Playlist";
+      createPlaylistDiv.appendChild(createPlayListButton);
+    }
+
     const songs = document.createElement("div");
     songs.className = "songList";
     if (item.soundtrack.length > 0) {
@@ -56,7 +67,7 @@ function populateTable(data) {
     row.appendChild(title);
     row.appendChild(date);
     row.appendChild(activityLink);
-    row.appendChild(createPlayListButton);
+    row.appendChild(createPlaylistDiv);
     row.appendChild(songs);
     tableBody.appendChild(row);
   });
@@ -75,18 +86,20 @@ async function createPlaylistOnClick(activity_id, button) {
     },
     body: JSON.stringify({ activity_id }),
   });
+  button.removeChild(spinner);
   if (!response.ok) {
+    button.textContent = "Error creating playlist";
     console.error("ERROR:", response.statusText);
     return;
   }
-  button.removeChild(spinner);
+
   const data = await response.json();
-  // alert(data.message);
   button.href = data.playlistUrl;
   button.addEventListener("click", function () {
     window.open(button.href, "_blank");
   });
-  button.style.color = "#1ed760";
+  button.style.color = "black";
+  button.style.backgroundColor = "#1ed760";
   button.style.fontWeight = "bolder";
   button.textContent = "Open Playlist on Spotify";
   console.log(data);
